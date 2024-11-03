@@ -1,0 +1,13 @@
+## このファイルの使用方法
+
+## s３バケット
+page-coming-soon
+
+今回は、s3バケットにホスティングしているので、s3バケットのURLを指定してください。
+page-coming-soon
+    images/
+        all.png
+        one.png
+        (画像ファイル)
+    index.html
+
