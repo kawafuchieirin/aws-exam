@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AWS認定バッジジェネレーター</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0d1117;
+  color: #e0e0e0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  min-height: 100vh;
+  padding: 32px 24px;
+}
+h1 {
+  text-align: center;
+  font-size: 1.6rem;
+  margin-bottom: 8px;
+  color: #fff;
+}
+.subtitle {
+  text-align: center;
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 24px;
+}
+.selector-area {
+  max-width: 960px;
+  margin: 0 auto 20px;
+  background: #161b22;
+  border-radius: 8px;
+  padding: 20px;
+}
+.cert-row {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.cert-row:last-child { margin-bottom: 0; }
+.cert-row select {
+  width: 100%;
+  background: #21262d;
+  color: #e0e0e0;
+  border: 1px solid #30363d;
+  border-radius: 4px;
+  padding: 8px 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.cert-row select:focus {
+  outline: none;
+  border-color: #ff9900;
+}
+.btn-generate {
+  display: block;
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto 24px;
+  padding: 14px;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-generate:hover { opacity: 0.85; }
+.result-area {
+  max-width: 960px;
+  margin: 0 auto;
+}
+.result-area h2 {
+  font-size: 1.1rem;
+  margin-bottom: 16px;
+  color: #aaa;
+  display: none;
+}
+.badge-container {
+  display: none;
+  background: #161b22;
+  border-radius: 8px;
+  padding: 30px 20px;
+  overflow: hidden;
+}
+.badge-row {
+  display: flex;
+  justify-content: center;
+  margin: 0;
+  position: relative;
+}
+.badge-row.offset {
+  margin-top: -40px;
+}
+.badge-item {
+  width: 140px;
+  margin: 0 -12px;
+  flex-shrink: 0;
+  position: relative;
+}
+.badge-item img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.btn-download {
+  display: none;
+  margin: 16px auto 0;
+  padding: 10px 28px;
+  background: #ff9900;
+  color: #000;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+}
+.btn-download:hover { opacity: 0.85; }
+#downloadCanvas { display: none; }
+</style>
+</head>
+<body>
+
+<h1>AWS認定バッジジェネレーター</h1>
+<p class="subtitle">取得済み認定を選択して、バッジ一覧画像を生成できます</p>
+
+<div class="selector-area">
+  <div class="cert-row" id="row-cert1"></div>
+  <div class="cert-row" id="row-status1"></div>
+  <div class="cert-row" id="row-cert2"></div>
+  <div class="cert-row" id="row-status2"></div>
+</div>
+
+<button class="btn-generate" id="btnGenerate">バッジ画像を生成</button>
+
+<div class="result-area">
+  <h2 id="resultTitle">生成されたバッジ</h2>
+  <div class="badge-container" id="badgeContainer"></div>
+  <canvas id="downloadCanvas"></canvas>
+  <button class="btn-download" id="btnDownload">ダウンロード</button>
+</div>
+
+<script src="badge-data.js"></script>
+<script>
+var ROW1 = [
+  { id: 'SAP', label: 'SAP', level: 'PROFESSIONAL' },
+  { id: 'SCS', label: 'SCS', level: 'SPECIALTY' },
+  { id: 'DEA', label: 'DEA', level: 'ASSOCIATE' },
+  { id: 'DVA', label: 'DVA', level: 'ASSOCIATE' },
+  { id: 'CLF', label: 'CLF', level: 'FOUNDATIONAL' },
+];
+var ROW2 = [
+  { id: 'DOP', label: 'DOP', level: 'PROFESSIONAL' },
+  { id: 'ANS', label: 'ANS', level: 'SPECIALTY' },
+  { id: 'MLA', label: 'MLA', level: 'ASSOCIATE' },
+  { id: 'SAA', label: 'SAA', level: 'ASSOCIATE' },
+  { id: 'SOA', label: 'SOA', level: 'ASSOCIATE' },
+  { id: 'AIF', label: 'AIF', level: 'FOUNDATIONAL' },
+];
+var ALL_CERTS = ROW1.concat(ROW2);
+
+// レベル優先度（小さいほど左に表示）
+var LEVEL_ORDER = { PROFESSIONAL: 0, SPECIALTY: 1, ASSOCIATE: 2, FOUNDATIONAL: 3 };
+
+// Preload images from base64 data
+var imageCache = {};
+ALL_CERTS.forEach(function(cert) {
+  var img = new Image();
+  img.src = BADGE_DATA[cert.id];
+  imageCache[cert.id] = img;
+});
+
+// UI構築
+function buildRow(certs, certRowEl, statusRowEl) {
+  certs.forEach(function(cert) {
+    var certSel = document.createElement('select');
+    certSel.disabled = true;
+    var co = document.createElement('option');
+    co.textContent = cert.label;
+    certSel.appendChild(co);
+    certRowEl.appendChild(certSel);
+
+    var statusSel = document.createElement('select');
+    statusSel.id = 'status-' + cert.id;
+    [['none', '未取得'], ['cleared', 'クリア']].forEach(function(pair) {
+      var o = document.createElement('option');
+      o.value = pair[0];
+      o.textContent = pair[1];
+      statusSel.appendChild(o);
+    });
+    statusRowEl.appendChild(statusSel);
+  });
+  var pad = 6 - certs.length;
+  for (var i = 0; i < pad; i++) {
+    certRowEl.appendChild(document.createElement('div'));
+    statusRowEl.appendChild(document.createElement('div'));
+  }
+}
+
+buildRow(ROW1, document.getElementById('row-cert1'), document.getElementById('row-status1'));
+buildRow(ROW2, document.getElementById('row-cert2'), document.getElementById('row-status2'));
+
+// レベル順にソートする関数
+function sortByLevel(certs) {
+  return certs.slice().sort(function(a, b) {
+    return LEVEL_ORDER[a.level] - LEVEL_ORDER[b.level];
+  });
+}
+
+function generateBadges() {
+  var cleared = ALL_CERTS.filter(function(c) {
+    return document.getElementById('status-' + c.id).value === 'cleared';
+  });
+
+  if (cleared.length === 0) {
+    alert('少なくとも1つの資格を「クリア」に設定してください。');
+    return;
+  }
+
+  // レベル順にソート
+  var sorted = sortByLevel(cleared);
+
+  var container = document.getElementById('badgeContainer');
+  container.innerHTML = '';
+
+  var topCount, botCount;
+  if (sorted.length <= 6) {
+    topCount = sorted.length;
+    botCount = 0;
+  } else {
+    topCount = Math.ceil(sorted.length / 2);
+    botCount = sorted.length - topCount;
+  }
+
+  // 上段
+  var topRow = document.createElement('div');
+  topRow.className = 'badge-row';
+  for (var i = 0; i < topCount; i++) {
+    var item = document.createElement('div');
+    item.className = 'badge-item';
+    var img = document.createElement('img');
+    img.src = BADGE_DATA[sorted[i].id];
+    img.alt = sorted[i].label;
+    item.appendChild(img);
+    topRow.appendChild(item);
+  }
+  container.appendChild(topRow);
+
+  // 下段
+  if (botCount > 0) {
+    var botRow = document.createElement('div');
+    botRow.className = 'badge-row offset';
+    for (var j = 0; j < botCount; j++) {
+      var item2 = document.createElement('div');
+      item2.className = 'badge-item';
+      var img2 = document.createElement('img');
+      img2.src = BADGE_DATA[sorted[topCount + j].id];
+      img2.alt = sorted[topCount + j].label;
+      item2.appendChild(img2);
+      botRow.appendChild(item2);
+    }
+    container.appendChild(botRow);
+  }
+
+  document.getElementById('resultTitle').style.display = 'block';
+  container.style.display = 'block';
+  document.getElementById('btnDownload').style.display = 'block';
+}
+
+function downloadImage() {
+  var cleared = ALL_CERTS.filter(function(c) {
+    return document.getElementById('status-' + c.id).value === 'cleared';
+  });
+  if (cleared.length === 0) return;
+
+  var sorted = sortByLevel(cleared);
+
+  var topCount, botCount;
+  if (sorted.length <= 6) {
+    topCount = sorted.length;
+    botCount = 0;
+  } else {
+    topCount = Math.ceil(sorted.length / 2);
+    botCount = sorted.length - topCount;
+  }
+
+  var badgeSize = 160;
+  var overlapX = 28;
+  var stepX = badgeSize - overlapX;
+  var rows = botCount > 0 ? 2 : 1;
+  var maxCols = Math.max(topCount, botCount);
+
+  var padX = 30;
+  var padY = 30;
+  var cw = maxCols * stepX + overlapX + padX * 2;
+  var verticalOverlap = 45;
+  var ch = badgeSize + (rows > 1 ? badgeSize - verticalOverlap : 0) + padY * 2;
+
+  var canvas = document.getElementById('downloadCanvas');
+  var dpr = 2;
+  canvas.width = cw * dpr;
+  canvas.height = ch * dpr;
+  var ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  ctx.fillStyle = '#161b22';
+  ctx.fillRect(0, 0, cw, ch);
+
+  var loaded = 0;
+  var total = sorted.length;
+
+  function drawAll() {
+    var topRowW = topCount * stepX + overlapX;
+    var topStartX = padX + (cw - padX * 2 - topRowW) / 2;
+    for (var i = 0; i < topCount; i++) {
+      ctx.drawImage(imageCache[sorted[i].id], topStartX + i * stepX, padY, badgeSize, badgeSize);
+    }
+    if (botCount > 0) {
+      var botRowW = botCount * stepX + overlapX;
+      var botStartX = padX + (cw - padX * 2 - botRowW) / 2;
+      var botY = padY + badgeSize - verticalOverlap;
+      for (var j = 0; j < botCount; j++) {
+        ctx.drawImage(imageCache[sorted[topCount + j].id], botStartX + j * stepX, botY, badgeSize, badgeSize);
+      }
+    }
+
+    var a = document.createElement('a');
+    var now = new Date();
+    var d = now.getFullYear() +
+      ('0' + (now.getMonth() + 1)).slice(-2) +
+      ('0' + now.getDate()).slice(-2);
+    a.download = 'aws-badges-' + d + '.png';
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+  }
+
+  sorted.forEach(function(cert) {
+    var img = imageCache[cert.id];
+    if (img.complete) {
+      loaded++;
+      if (loaded === total) drawAll();
+    } else {
+      img.onload = function() {
+        loaded++;
+        if (loaded === total) drawAll();
+      };
+    }
+  });
+}
+
+document.getElementById('btnGenerate').addEventListener('click', generateBadges);
+document.getElementById('btnDownload').addEventListener('click', downloadImage);
+</script>
+</body>
+</html>
