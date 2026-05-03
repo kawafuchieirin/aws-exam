@@ -14,3 +14,39 @@
 
 ## ディレクトリ構成
 
+```text
+.
+├── README.md
+└── badge-generator/
+    ├── index.html
+    ├── badge-data.js
+    └── images/
+        ├── AIF.png
+        ├── ANS.png
+        ├── CLF.png
+        ├── DEA.png
+        ├── DOP.png
+        ├── DVA.png
+        ├── MLA.png
+        ├── SAA.png
+        ├── SAP.png
+        ├── SCS.png
+        └── SOA.png
+```
+
+## badge-generatorの使い方
+
+AWS認定バッジの一覧画像を生成するためのツールです。
+
+```bash
+cd badge-generator
+python3 -m http.server 8000
+```
+
+ブラウザで以下にアクセスします。
+
+```text
+http://localhost:8000
+```
+
+取得済みの資格を「クリア」に変更し、「バッジ画像を生成」を押すと画像を生成できます。
