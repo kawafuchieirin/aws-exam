@@ -2,7 +2,6 @@
 
 ## 取得済み
 資格試験の学習のためのリポジトリ
-<img width="1496" height="670" alt="aws-badges-20260412" src="https://github.com/user-attachments/assets/acfbbe46-690a-45d5-9213-b18ee2e7e3e3" />
 
 
 
