@@ -82,23 +82,17 @@ h1 {
   display: none;
   background: #161b22;
   border-radius: 8px;
-  padding: 30px 20px;
+  padding: 24px 16px;
   overflow: hidden;
+  text-align: center;
 }
-.badge-row {
-  display: flex;
-  justify-content: center;
-  margin: 0;
+.badge-honeycomb {
   position: relative;
-}
-.badge-row.offset {
-  margin-top: -40px;
+  margin: 0 auto;
 }
 .badge-item {
+  position: absolute;
   width: 140px;
-  margin: 0 -12px;
-  flex-shrink: 0;
-  position: relative;
 }
 .badge-item img {
   width: 100%;
@@ -210,6 +204,61 @@ function sortByLevel(certs) {
   });
 }
 
+// バッジ数から各段の個数配列を返す（1段の最大は6個、上段が多めになるように分配）
+var MAX_PER_ROW = 6;
+function computeRowCounts(total) {
+  if (total <= 0) return [];
+  var rows = Math.ceil(total / MAX_PER_ROW);
+  var base = Math.floor(total / rows);
+  var extra = total % rows;
+  var counts = [];
+  for (var i = 0; i < rows; i++) {
+    counts.push(base + (i < extra ? 1 : 0));
+  }
+  return counts;
+}
+
+// ハニカム配置の座標計算
+// 画像600x600内のヘックス本体は506x584（左右47px、上下8pxの透明な「ふち」）
+// 表示サイズに対する比率で、ふちのみが重なるよう step を算出する
+function honeycombMetrics(badgeSize) {
+  var stepX = badgeSize * 506 / 600;        // 同じ段の横方向ステップ（ヘックス幅）
+  var stepY = badgeSize * 584 * 0.75 / 600; // 段間ステップ（ヘックス高 × 3/4）
+  return { stepX: stepX, stepY: stepY };
+}
+
+// rowCounts に基づき、各バッジの相対座標とハニカム全体のサイズを返す
+// 奇数段は半ステップ右にずらす（ハニカム配置）
+function computeHoneycombLayout(rowCounts, badgeSize) {
+  var m = honeycombMetrics(badgeSize);
+  var minPos = Infinity, maxPos = -Infinity;
+  rowCounts.forEach(function(count, rowIdx) {
+    if (count <= 0) return;
+    var start = (rowIdx % 2) * 0.5;
+    var end = start + (count - 1);
+    if (start < minPos) minPos = start;
+    if (end > maxPos) maxPos = end;
+  });
+  if (!isFinite(minPos)) { minPos = 0; maxPos = 0; }
+
+  var positions = [];
+  rowCounts.forEach(function(count, rowIdx) {
+    var rowOffsetUnits = (rowIdx % 2) * 0.5 - minPos;
+    for (var i = 0; i < count; i++) {
+      positions.push({
+        x: (i + rowOffsetUnits) * m.stepX,
+        y: rowIdx * m.stepY
+      });
+    }
+  });
+
+  return {
+    positions: positions,
+    width: (maxPos - minPos) * m.stepX + badgeSize,
+    height: (rowCounts.length - 1) * m.stepY + badgeSize
+  };
+}
+
 function generateBadges() {
   var cleared = ALL_CERTS.filter(function(c) {
     return document.getElementById('status-' + c.id).value === 'cleared';
@@ -226,44 +275,28 @@ function generateBadges() {
   var container = document.getElementById('badgeContainer');
   container.innerHTML = '';
 
-  var topCount, botCount;
-  if (sorted.length <= 6) {
-    topCount = sorted.length;
-    botCount = 0;
-  } else {
-    topCount = Math.ceil(sorted.length / 2);
-    botCount = sorted.length - topCount;
-  }
+  var rowCounts = computeRowCounts(sorted.length);
+  var BADGE_PX = 140;
+  var layout = computeHoneycombLayout(rowCounts, BADGE_PX);
 
-  // 上段
-  var topRow = document.createElement('div');
-  topRow.className = 'badge-row';
-  for (var i = 0; i < topCount; i++) {
+  var honeycomb = document.createElement('div');
+  honeycomb.className = 'badge-honeycomb';
+  honeycomb.style.width = layout.width + 'px';
+  honeycomb.style.height = layout.height + 'px';
+
+  layout.positions.forEach(function(pos, i) {
     var item = document.createElement('div');
     item.className = 'badge-item';
+    item.style.left = pos.x + 'px';
+    item.style.top = pos.y + 'px';
     var img = document.createElement('img');
     img.src = BADGE_DATA[sorted[i].id];
     img.alt = sorted[i].label;
     item.appendChild(img);
-    topRow.appendChild(item);
-  }
-  container.appendChild(topRow);
+    honeycomb.appendChild(item);
+  });
 
-  // 下段
-  if (botCount > 0) {
-    var botRow = document.createElement('div');
-    botRow.className = 'badge-row offset';
-    for (var j = 0; j < botCount; j++) {
-      var item2 = document.createElement('div');
-      item2.className = 'badge-item';
-      var img2 = document.createElement('img');
-      img2.src = BADGE_DATA[sorted[topCount + j].id];
-      img2.alt = sorted[topCount + j].label;
-      item2.appendChild(img2);
-      botRow.appendChild(item2);
-    }
-    container.appendChild(botRow);
-  }
+  container.appendChild(honeycomb);
 
   document.getElementById('resultTitle').style.display = 'block';
   container.style.display = 'block';
@@ -277,27 +310,14 @@ function downloadImage() {
   if (cleared.length === 0) return;
 
   var sorted = sortByLevel(cleared);
-
-  var topCount, botCount;
-  if (sorted.length <= 6) {
-    topCount = sorted.length;
-    botCount = 0;
-  } else {
-    topCount = Math.ceil(sorted.length / 2);
-    botCount = sorted.length - topCount;
-  }
+  var rowCounts = computeRowCounts(sorted.length);
 
   var badgeSize = 160;
-  var overlapX = 28;
-  var stepX = badgeSize - overlapX;
-  var rows = botCount > 0 ? 2 : 1;
-  var maxCols = Math.max(topCount, botCount);
-
-  var padX = 30;
-  var padY = 30;
-  var cw = maxCols * stepX + overlapX + padX * 2;
-  var verticalOverlap = 45;
-  var ch = badgeSize + (rows > 1 ? badgeSize - verticalOverlap : 0) + padY * 2;
+  var layout = computeHoneycombLayout(rowCounts, badgeSize);
+  var padX = 24;
+  var padY = 24;
+  var cw = layout.width + padX * 2;
+  var ch = layout.height + padY * 2;
 
   var canvas = document.getElementById('downloadCanvas');
   var dpr = 2;
@@ -313,19 +333,9 @@ function downloadImage() {
   var total = sorted.length;
 
   function drawAll() {
-    var topRowW = topCount * stepX + overlapX;
-    var topStartX = padX + (cw - padX * 2 - topRowW) / 2;
-    for (var i = 0; i < topCount; i++) {
-      ctx.drawImage(imageCache[sorted[i].id], topStartX + i * stepX, padY, badgeSize, badgeSize);
-    }
-    if (botCount > 0) {
-      var botRowW = botCount * stepX + overlapX;
-      var botStartX = padX + (cw - padX * 2 - botRowW) / 2;
-      var botY = padY + badgeSize - verticalOverlap;
-      for (var j = 0; j < botCount; j++) {
-        ctx.drawImage(imageCache[sorted[topCount + j].id], botStartX + j * stepX, botY, badgeSize, badgeSize);
-      }
-    }
+    layout.positions.forEach(function(pos, i) {
+      ctx.drawImage(imageCache[sorted[i].id], padX + pos.x, padY + pos.y, badgeSize, badgeSize);
+    });
 
     var a = document.createElement('a');
     var now = new Date();
