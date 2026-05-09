@@ -3,7 +3,8 @@
 
 ## 取得済み
 
-<img width="1496" height="670" alt="Image" src="https://github.com/user-attachments/assets/c4ff9eaa-f510-42c7-8eee-5d6ddea10626" />
+<img width="1630" height="649" alt="aws-badges-20260509" src="https://github.com/user-attachments/assets/c1c76369-ad40-4251-ab80-9eec902d8a7b" />
+
 
 
 ## 未取得
