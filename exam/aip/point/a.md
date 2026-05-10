@@ -54,4 +54,12 @@ top-10 → 上位10個
 
 検索、推薦、分類、生成AIなどでよく使われます。
 
-##
+## Amazon Comprehend
+「Amazon Comprehend」は、AWSが提供している自然言語処理 (NLP) サービスで、機械学習を活用してテキストからインサイトを抽出できます。読み取ったテキストのキーフレーズの抽出や、感情の分析といった機能を備えており、日本語にも対応。拡張サービスとして、「Amazon Comprehend medical」という、医療文書の解析に特化したサービスもあります。
+
+https://www.cloudsolution.tokai-com.co.jp/white-paper/2024/1213-532.html
+
+## グラウンディングチェック
+これにより、モデルレスポンスがソースに基づいて事実上正確であり、ソースに基づいているかどうかが確認されます。レスポンスに追加された新しい情報は、根拠がないと見なされます。
+→AIの回答が事実に基づいているかを保証するためのもの
+https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/guardrails-contextual-grounding-check.html
