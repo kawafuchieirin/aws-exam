@@ -1,15 +1,14 @@
 # このファイルを terraform.tfvars にコピーして値を埋める。
 # terraform.tfvars は .gitignore 済み（機密のためコミットしない）。
-# あるいは環境変数 TF_VAR_basic_auth_username / TF_VAR_basic_auth_password で渡す。
+#
+# Basic認証の資格情報はここではなく SOPS で管理する:
+#   sops infra/secrets.sops.yaml   # 復号→編集→自動再暗号化
+# 値は secrets.tf 経由で apply 時に復号され Amplify に渡る。
 
 aws_region        = "ap-northeast-1"
 app_name          = "bunko"
 branch_name       = "main"
 github_repository = "kawafuchieirin/aws-exam"
-
-# Basic認証の資格情報（閲覧時に要求されるユーザー名/パスワード）
-basic_auth_username = "change-me"
-basic_auth_password = "use-a-strong-password"
 
 # OIDCプロバイダーがアカウントに未作成なら true、既存なら false
 create_oidc_provider = true

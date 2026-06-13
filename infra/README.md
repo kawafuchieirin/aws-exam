@@ -7,6 +7,8 @@
 infra/
 ├─ amplify.tf           # Amplifyアプリ + 公開ブランチ + Basic認証
 ├─ iam_github_oidc.tf   # GitHub Actions用 OIDCプロバイダー + デプロイロール（最小権限）
+├─ secrets.tf           # SOPS で暗号化した Basic認証情報を復号して参照
+├─ secrets.sops.yaml    # Basic認証情報（age で暗号化済み・コミットOK）
 ├─ variables.tf / outputs.tf / providers.tf / versions.tf
 └─ terraform.tfvars.example
 ```
@@ -16,22 +18,42 @@ infra/
 - **手動デプロイ方式**: Amplify にリポジトリを接続せず（`aws_amplify_app` に `repository` を指定しない）、
   ビルド〜デプロイはすべて GitHub Actions が担う。CI/CD を GitHub Actions に集約するため。
 - **セキュア**:
-  - 閲覧は Amplify ブランチの **Basic認証** で保護（資格情報は Terraform 変数。コードにハードコードしない）。
+  - 閲覧は Amplify ブランチの **Basic認証** で保護。資格情報は **SOPS + age で暗号化**して Git に置く（平文はコミットしない）。
   - GitHub Actions → AWS は **OIDC の一時クレデンシャル**。長期アクセスキーを Secrets に置かない。
   - デプロイロールは対象 Amplify アプリのみに権限を限定。
+
+## 0. Basic認証情報（SOPS）の準備
+
+Basic認証のユーザー名/パスワードは `infra/secrets.sops.yaml` に **age で暗号化**して格納する。
+暗号化ルールはリポジトリ直下の `.sops.yaml`（age 公開鍵を記載・コミット済み）。
+
+```bash
+# 必要ツール（.mise.toml で管理）
+mise install                       # sops / age を導入
+
+# 鍵（初回のみ・既に作成済みなら不要）。秘密鍵は下記パスに保存しコミットしない。
+#   macOS:  ~/Library/Application Support/sops/age/keys.txt
+#   Linux:  ~/.config/sops/age/keys.txt （または環境変数 SOPS_AGE_KEY_FILE で指定）
+# 新しい鍵を作る場合は公開鍵を .sops.yaml の age: に差し替えて再暗号化する。
+
+# 値の編集（自動で復号→エディタ→保存時に再暗号化）
+sops infra/secrets.sops.yaml
+#   basic_auth_username: <任意のユーザー名>
+#   basic_auth_password: <強いパスワード>
+```
+
+> ⚠️ age 秘密鍵を紛失すると復号できなくなる。1Password 等にバックアップしておく。
+> 別マシン/CI から apply する場合は、その秘密鍵を環境変数 `SOPS_AGE_KEY`（中身）または
+> `SOPS_AGE_KEY_FILE`（パス）で渡す。
 
 ## 1. インフラを作成（ローカルから一度だけ）
 
 ```bash
 cd infra
-cp terraform.tfvars.example terraform.tfvars   # 値を埋める（Basic認証のユーザー名/パス等）
-
-# Basic認証情報は環境変数で渡してもよい（tfvarsに書かない場合）
-# export TF_VAR_basic_auth_username='your-name'
-# export TF_VAR_basic_auth_password='strong-password'
+cp terraform.tfvars.example terraform.tfvars   # Basic認証以外の値（任意で編集）
 
 terraform init
-terraform plan
+terraform plan      # secrets.sops.yaml が自動復号され Amplify に渡る
 terraform apply
 ```
 
@@ -74,7 +96,10 @@ Settings → Secrets and variables → Actions に登録する。
 
 ## 認証情報を変更したいとき
 
-`terraform.tfvars`（または環境変数）の `basic_auth_*` を変えて `terraform apply`。
+```bash
+sops infra/secrets.sops.yaml   # 復号→値を編集→保存で再暗号化
+cd infra && terraform apply    # 新しい資格情報を Amplify に反映
+```
 
 ## 状態管理について
 

@@ -22,17 +22,8 @@ variable "github_repository" {
   default     = "kawafuchieirin/aws-exam"
 }
 
-variable "basic_auth_username" {
-  description = "Basic認証のユーザー名。tfvars か環境変数 TF_VAR_basic_auth_username で渡す（コミット禁止）"
-  type        = string
-  sensitive   = true
-}
-
-variable "basic_auth_password" {
-  description = "Basic認証のパスワード。tfvars か環境変数 TF_VAR_basic_auth_password で渡す（コミット禁止）"
-  type        = string
-  sensitive   = true
-}
+# Basic認証の資格情報は変数ではなく SOPS（infra/secrets.sops.yaml）で管理する。
+# secrets.tf の data.sops_file 経由で local.basic_auth_username / password として参照。
 
 variable "create_oidc_provider" {
   description = "GitHub Actions 用の OIDC プロバイダーを新規作成するか。アカウントに既存ならfalseにして既存を参照"
