@@ -6,6 +6,11 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.60"
     }
+    # SOPS で暗号化した secrets.sops.yaml を apply 時に復号する。
+    sops = {
+      source  = "carlpett/sops"
+      version = "~> 1.1"
+    }
   }
 
   # 状態ファイルはデフォルトでローカル(terraform.tfstate)。

@@ -20,7 +20,7 @@ resource "aws_amplify_branch" "main" {
   stage       = "PRODUCTION"
 
   enable_basic_auth      = true
-  basic_auth_credentials = base64encode("${var.basic_auth_username}:${var.basic_auth_password}")
+  basic_auth_credentials = base64encode("${local.basic_auth_username}:${local.basic_auth_password}")
 
   # 手動デプロイ運用のため自動ビルドは無効
   enable_auto_build = false

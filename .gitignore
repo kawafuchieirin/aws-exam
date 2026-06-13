@@ -1,0 +1,13 @@
+# macOS
+.DS_Store
+
+# SOPS / age — 秘密鍵と復号済みファイルは絶対にコミットしない。
+# （暗号化済みの *.sops.yaml は安全なのでコミット対象。ここでは除外しない）
+*.agekey
+age-key.txt
+keys.txt
+*.dec
+*.dec.*
+*.decrypted
+*.decrypted.*
+secrets.plain.*

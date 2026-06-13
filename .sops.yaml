@@ -1,0 +1,7 @@
+# SOPS 暗号化ルール。対象ファイルを age 公開鍵で暗号化する。
+# 秘密鍵は ~/.config/sops/age/keys.txt（リポジトリ外）。公開鍵はここにコミットしてよい。
+creation_rules:
+  - path_regex: infra/secrets\.sops\.ya?ml$
+    # 値のみ暗号化（キー名は平文のまま diff で追える）
+    encrypted_regex: "^(basic_auth_username|basic_auth_password)$"
+    age: "age1qyr4xznv0exnxacqlyy6x4wz8c7yhdw5h5gj7rmqf0wms55agfrszhgveq"
