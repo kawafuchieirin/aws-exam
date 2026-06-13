@@ -1,7 +1,11 @@
 ---
 // ANS-C01 問題集トラッカー
-// 外部の問題集（①250問 / 模擬220問）について「どの問題を解かなくていいか」を
-// 番号単位で記録する。問題文そのものは扱わず、状態だけをブラウザ(localStorage)に保存する。
+// 外部の問題集（①250問 / 模擬220問）について、各問題の手応えを番号単位で記録する。
+// 問題文そのものは扱わず、状態だけをブラウザ(localStorage)に保存する。
+//   × … 間違えた／わからない（要復習）
+//   ○ … 正解できた（ただし要確認）
+//   ◎ … 理解できた → 一覧から隠れ、解く対象から外れる
+// さらに各問題ごとに「振り返りメモ」と「選択肢を何択まで絞れたか」を残せる。
 // 静的サイトのためサーバ不要・端末ごとに記録が残る。
 import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 ---
@@ -9,25 +13,26 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 <StarlightPage
 	frontmatter={{
 		title: 'ANS-C01 問題集トラッカー',
-		description: '外部の問題集について、理解済み（みし）で解かなくてよい問題を番号で記録する。記録はブラウザに保存。',
+		description: '外部の問題集について、×○◎の手応えと振り返りメモを番号で記録する。記録はブラウザに保存。',
 		tableOfContents: false,
 	}}
 >
 	<p>
-		手元の問題集の「番号」をタップして状態を切り替えます。問題文は扱いません。
+		手元の問題集の「番号」をタップすると編集パネルが開きます。問題文は扱いません。
 		記録は<strong>このブラウザ（端末）</strong>に保存され、次回も残ります。
 	</p>
 
 	<section class="dashboard" id="dashboard" aria-live="polite">
 		<h2>学習の成果</h2>
 		<div class="dash-top">
-			<div class="ring" id="dash-ring" style="--pct:0" role="img" aria-label="理解済みの割合">
-				<div class="ring-center"><b id="dash-pct">0%</b><span>理解済み</span></div>
+			<div class="ring" id="dash-ring" style="--pct:0" role="img" aria-label="理解できた割合">
+				<div class="ring-center"><b id="dash-pct">0%</b><span>理解できた</span></div>
 			</div>
 			<div class="stats">
-				<div class="stat s-mastered"><b id="dash-mastered">0</b><span>理解済み</span></div>
-				<div class="stat s-review"><b id="dash-review">0</b><span>要復習</span></div>
-				<div class="stat s-remain"><b id="dash-remain">0</b><span>残り</span></div>
+				<div class="stat s-mastered"><b id="dash-mastered">0</b><span>◎ 理解できた</span></div>
+				<div class="stat s-ok"><b id="dash-ok">0</b><span>○ できた</span></div>
+				<div class="stat s-ng"><b id="dash-ng">0</b><span>× 要復習</span></div>
+				<div class="stat s-remain"><b id="dash-remain">0</b><span>未着手</span></div>
 				<div class="stat"><b id="dash-total">0</b><span>総問題数</span></div>
 			</div>
 		</div>
@@ -36,20 +41,62 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 
 	<div class="legend" aria-hidden="true">
 		<span class="chip s-none">未着手</span>
-		<span class="chip s-mastered">理解済み（みし）</span>
-		<span class="chip s-review">要復習</span>
+		<span class="chip s-ng">× 要復習</span>
+		<span class="chip s-ok">○ できた</span>
+		<span class="chip s-mastered">◎ 理解できた</span>
+		<span class="chip s-meta">① メモ／絞り込みあり</span>
 	</div>
 	<p class="muted">
-		タップで <em>未着手 → 理解済み → 要復習 → 未着手</em> と切り替わります。
-		<strong>理解済み（みし）</strong>は一覧から隠れ、解く対象から外れます。下のトグルでいつでも再表示できます。
+		番号をタップ → パネルで <strong>×／○／◎</strong> を選び、<strong>振り返りメモ</strong>や
+		<strong>「○択まで絞れた」</strong>を記録できます。
+		<strong>◎（理解できた）</strong>は一覧から隠れ、解く対象から外れます。下のトグルでいつでも再表示できます。
 	</p>
 
 	<label class="toggle">
 		<input type="checkbox" id="show-mastered" />
-		理解済み（みし）も表示する
+		◎（理解できた）も表示する
 	</label>
 
 	<div id="tracker"></div>
+
+	<dialog id="detail" class="detail">
+		<div class="detail-card">
+			<header class="detail-head">
+				<h3 id="d-title">問題</h3>
+				<button type="button" class="d-x" id="d-close" aria-label="閉じる">×</button>
+			</header>
+
+			<div class="d-section">
+				<div class="d-label">手応え</div>
+				<div class="d-marks" id="d-marks">
+					<button type="button" class="d-mark m-ng" data-mark="x"><b>×</b>間違えた</button>
+					<button type="button" class="d-mark m-ok" data-mark="o"><b>○</b>できた</button>
+					<button type="button" class="d-mark m-mastered" data-mark="oo"><b>◎</b>理解できた</button>
+				</div>
+			</div>
+
+			<div class="d-section">
+				<div class="d-label">選択肢を絞れた</div>
+				<div class="d-narrowed" id="d-narrowed">
+					<button type="button" data-narrowed="2">2択</button>
+					<button type="button" data-narrowed="3">3択</button>
+					<button type="button" data-narrowed="4">4択</button>
+					<button type="button" data-narrowed="5">5択</button>
+					<button type="button" class="n-clear" data-narrowed="0">クリア</button>
+				</div>
+			</div>
+
+			<div class="d-section">
+				<div class="d-label">振り返りメモ</div>
+				<textarea id="d-comment" rows="3" placeholder="なぜ間違えた？ どこがポイント？ 次に気をつけること など"></textarea>
+			</div>
+
+			<footer class="detail-foot">
+				<button type="button" class="d-delete" id="d-delete">この問題の記録を消す</button>
+				<button type="button" class="d-done" id="d-done">閉じる</button>
+			</footer>
+		</div>
+	</dialog>
 
 	<style>
 		.legend { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.5rem 0; }
@@ -61,7 +108,9 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 		.chip::before { content: ''; width: 0.7rem; height: 0.7rem; border-radius: 3px; display: inline-block; }
 		.s-none::before { background: var(--sl-color-gray-4); }
 		.s-mastered::before { background: #2e7d32; }
-		.s-review::before { background: #ed6c02; }
+		.s-ok::before { background: #f9a825; }
+		.s-ng::before { background: #c62828; }
+		.s-meta::before { background: var(--sl-color-text-accent); border-radius: 50%; }
 		.muted { color: var(--sl-color-gray-3); font-size: 0.9rem; }
 		.toggle { display: inline-flex; align-items: center; gap: 0.4rem; margin: 0.5rem 0 1.5rem; cursor: pointer; }
 
@@ -87,7 +136,8 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 		.stat b { display: block; font-size: 1.6rem; font-variant-numeric: tabular-nums; line-height: 1.1; }
 		.stat span { font-size: 0.8rem; color: var(--sl-color-gray-3); }
 		.stat.s-mastered b { color: #2e7d32; }
-		.stat.s-review b { color: #ed6c02; }
+		.stat.s-ok b { color: #f9a825; }
+		.stat.s-ng b { color: #c62828; }
 		.stat.s-remain b { color: var(--sl-color-text-accent); }
 		.dash-decks { margin-top: 1.25rem; display: grid; gap: 0.75rem; }
 		.dash-deck-head { display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 0.25rem; }
@@ -103,15 +153,28 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 
 		.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(2.6rem, 1fr)); gap: 0.35rem; }
 		.cell {
-			aspect-ratio: 1 / 1; min-height: 2.6rem; border: 1px solid var(--sl-color-gray-5);
-			border-radius: 6px; background: var(--sl-color-black); color: var(--sl-color-white);
-			font-size: 0.85rem; font-variant-numeric: tabular-nums; cursor: pointer;
+			position: relative; aspect-ratio: 1 / 1; min-height: 2.6rem;
+			border: 1px solid var(--sl-color-gray-5); border-radius: 6px;
+			background: var(--sl-color-black); color: var(--sl-color-white);
+			font-variant-numeric: tabular-nums; cursor: pointer;
 			display: flex; align-items: center; justify-content: center; padding: 0; line-height: 1;
 		}
 		.cell:hover { border-color: var(--sl-color-text-accent); }
-		.cell.mastered { background: #2e7d32; color: #fff; border-color: #2e7d32; }
-		.cell.review { background: #ed6c02; color: #fff; border-color: #ed6c02; }
-		.cell.mastered.dimmed { opacity: 0.45; }
+		.cell .c-num { font-size: 0.85rem; }
+		.cell .c-mark { position: absolute; top: 1px; left: 3px; font-size: 0.7rem; font-weight: 700; }
+		.cell .c-narrowed {
+			position: absolute; bottom: 0; right: 2px; font-size: 0.58rem; font-weight: 700;
+			padding: 0 0.15rem; border-radius: 3px; background: rgba(0, 0, 0, 0.35);
+		}
+		.cell .c-comment {
+			position: absolute; top: 3px; right: 3px; width: 6px; height: 6px;
+			border-radius: 50%; background: var(--sl-color-text-accent);
+		}
+		.cell.mark-x { background: #c62828; color: #fff; border-color: #c62828; }
+		.cell.mark-o { background: #f9a825; color: #1a1a1a; border-color: #f9a825; }
+		.cell.mark-o .c-comment { background: #1a1a1a; }
+		.cell.mark-oo { background: #2e7d32; color: #fff; border-color: #2e7d32; }
+		.cell.mark-oo.dimmed { opacity: 0.45; }
 
 		.deck-actions { margin-top: 0.75rem; }
 		.deck-actions button {
@@ -119,6 +182,60 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 			border: 1px solid var(--sl-color-gray-5); background: transparent; color: inherit; cursor: pointer;
 		}
 		.deck-actions button:hover { border-color: var(--sl-color-text-accent); }
+
+		/* 詳細パネル（ダイアログ） */
+		.detail {
+			border: none; border-radius: 12px; padding: 0; max-width: 92vw; width: 22rem;
+			background: var(--sl-color-bg); color: var(--sl-color-text);
+			box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+		}
+		.detail::backdrop { background: rgba(0, 0, 0, 0.5); }
+		.detail-card { padding: 1rem 1.1rem 1.1rem; }
+		.detail-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
+		.detail-head h3 { margin: 0; font-size: 1.05rem; border: none; }
+		.d-x {
+			border: none; background: transparent; color: var(--sl-color-gray-2);
+			font-size: 1.4rem; line-height: 1; cursor: pointer; padding: 0 0.25rem;
+		}
+		.d-section { margin-bottom: 0.9rem; }
+		.d-label { font-size: 0.8rem; color: var(--sl-color-gray-2); margin-bottom: 0.35rem; }
+		.d-marks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; }
+		.d-mark {
+			display: flex; flex-direction: column; align-items: center; gap: 0.1rem;
+			padding: 0.45rem 0.2rem; border-radius: 8px; cursor: pointer; font-size: 0.72rem;
+			border: 1px solid var(--sl-color-gray-5); background: transparent; color: inherit;
+		}
+		.d-mark b { font-size: 1.15rem; line-height: 1; }
+		.d-mark:hover { border-color: var(--sl-color-text-accent); }
+		.d-mark.active.m-ng { background: #c62828; color: #fff; border-color: #c62828; }
+		.d-mark.active.m-ok { background: #f9a825; color: #1a1a1a; border-color: #f9a825; }
+		.d-mark.active.m-mastered { background: #2e7d32; color: #fff; border-color: #2e7d32; }
+		.d-narrowed { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+		.d-narrowed button {
+			padding: 0.3rem 0.7rem; border-radius: 999px; cursor: pointer; font-size: 0.82rem;
+			border: 1px solid var(--sl-color-gray-5); background: transparent; color: inherit;
+		}
+		.d-narrowed button:hover { border-color: var(--sl-color-text-accent); }
+		.d-narrowed button.active {
+			background: var(--sl-color-text-accent); color: var(--sl-color-black); border-color: var(--sl-color-text-accent);
+		}
+		.d-narrowed .n-clear { color: var(--sl-color-gray-2); }
+		#d-comment {
+			width: 100%; box-sizing: border-box; resize: vertical; font: inherit;
+			padding: 0.5rem 0.6rem; border-radius: 8px;
+			border: 1px solid var(--sl-color-gray-5); background: var(--sl-color-gray-7); color: inherit;
+		}
+		.detail-foot { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-top: 0.25rem; }
+		.d-delete {
+			font-size: 0.8rem; padding: 0.35rem 0.6rem; border-radius: 6px; cursor: pointer;
+			border: 1px solid var(--sl-color-gray-5); background: transparent; color: var(--sl-color-gray-2);
+		}
+		.d-delete:hover { border-color: #c62828; color: #c62828; }
+		.d-done {
+			font-size: 0.9rem; padding: 0.4rem 1rem; border-radius: 6px; cursor: pointer;
+			border: 1px solid var(--sl-color-text-accent);
+			background: var(--sl-color-text-accent); color: var(--sl-color-black);
+		}
 	</style>
 
 	<script>
@@ -127,88 +244,131 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 			{ id: 'set1', label: '問題集①', count: 250 },
 			{ id: 'mock', label: '模擬試験', count: 220 },
 		];
-		const STORAGE_KEY = 'ans-quiz-tracker-v1';
-		// 状態の遷移順。空（未着手）は保存しない。
-		const CYCLE = [undefined, 'mastered', 'review'];
+		const STORAGE_KEY = 'ans-quiz-tracker-v2';
+		const LEGACY_KEY = 'ans-quiz-tracker-v1';
 
-		/** @type {{[deck:string]: {[n:string]: string}}} */
-		let state = {};
-		try {
-			state = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}') || {};
-		} catch {
-			state = {};
+		/**
+		 * 問題ごとの記録: { mark?: 'x'|'o'|'oo', narrowed?: number, comment?: string }
+		 *   mark 'oo'（◎・理解できた）は一覧から隠れる。
+		 * @type {{[deck:string]: {[n:string]: {mark?:string, narrowed?:number, comment?:string}}}}
+		 */
+		let state = load();
+
+		function load() {
+			// 新フォーマット（v2）があれば優先
+			try {
+				const v2 = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+				if (v2 && typeof v2 === 'object') return v2;
+			} catch {}
+			// 旧フォーマット（v1: 値が 'mastered'/'review' の文字列）からの移行
+			try {
+				const v1 = JSON.parse(localStorage.getItem(LEGACY_KEY) || 'null');
+				if (v1 && typeof v1 === 'object') {
+					const migrated = {};
+					for (const [deckId, probs] of Object.entries(v1)) {
+						migrated[deckId] = {};
+						for (const [n, val] of Object.entries(probs || {})) {
+							if (val === 'mastered') migrated[deckId][n] = { mark: 'oo' };
+							else if (val === 'review') migrated[deckId][n] = { mark: 'o' };
+						}
+					}
+					localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+					return migrated;
+				}
+			} catch {}
+			return {};
 		}
 
 		const save = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 		const deckState = (id) => (state[id] ||= {});
+		const getRec = (deckId, n) => deckState(deckId)[n];
+
+		/** 記録を保存。中身が空（マーク・絞り込み・メモすべて無し）なら削除する。 */
+		function setRec(deckId, n, rec) {
+			const ds = deckState(deckId);
+			if (!rec || (!rec.mark && !rec.narrowed && !rec.comment)) delete ds[n];
+			else ds[n] = rec;
+			save();
+		}
 
 		const root = document.getElementById('tracker');
 		const showMasteredEl = /** @type {HTMLInputElement} */ (document.getElementById('show-mastered'));
 
-		function nextStatus(cur) {
-			const i = CYCLE.indexOf(cur);
-			return CYCLE[(i + 1) % CYCLE.length];
+		const MARK_SYMBOL = { x: '×', o: '○', oo: '◎' };
+
+		function applyCell(btn, rec, showMastered) {
+			const mark = rec?.mark;
+			btn.classList.toggle('mark-x', mark === 'x');
+			btn.classList.toggle('mark-o', mark === 'o');
+			btn.classList.toggle('mark-oo', mark === 'oo');
+			btn.classList.toggle('dimmed', mark === 'oo' && showMastered);
+			// ◎（理解できた）は隠す（トグルONなら薄く表示）
+			btn.style.display = mark === 'oo' && !showMastered ? 'none' : '';
+
+			const markEl = btn.querySelector('.c-mark');
+			markEl.textContent = mark ? MARK_SYMBOL[mark] : '';
+			const narrowedEl = btn.querySelector('.c-narrowed');
+			if (rec?.narrowed) {
+				narrowedEl.hidden = false;
+				narrowedEl.textContent = `${rec.narrowed}択`;
+			} else {
+				narrowedEl.hidden = true;
+			}
+			btn.querySelector('.c-comment').hidden = !rec?.comment;
+
+			const markLabel = mark === 'oo' ? '理解できた' : mark === 'o' ? 'できた' : mark === 'x' ? '間違えた' : '未着手';
+			const extra = [
+				rec?.narrowed ? `${rec.narrowed}択まで絞れた` : '',
+				rec?.comment ? 'メモあり' : '',
+			].filter(Boolean).join('、');
+			btn.setAttribute('aria-label', `${btn.dataset.n}番: ${markLabel}${extra ? '、' + extra : ''}`);
+			btn.title = `${markLabel}${extra ? ' / ' + extra : ''}`;
 		}
 
-		function applyCell(btn, status, showMastered) {
-			btn.classList.toggle('mastered', status === 'mastered');
-			btn.classList.toggle('review', status === 'review');
-			btn.classList.toggle('dimmed', status === 'mastered' && showMastered);
-			// 理解済みは隠す（トグルONなら薄く表示）
-			btn.style.display = status === 'mastered' && !showMastered ? 'none' : '';
-			const label =
-				status === 'mastered' ? '理解済み' : status === 'review' ? '要復習' : '未着手';
-			btn.setAttribute('aria-label', `${btn.dataset.n}番: ${label}`);
-			btn.title = label;
+		function countDeck(deck) {
+			const ds = deckState(deck.id);
+			let mastered = 0, ok = 0, ng = 0;
+			for (let n = 1; n <= deck.count; n++) {
+				const m = ds[n]?.mark;
+				if (m === 'oo') mastered++;
+				else if (m === 'o') ok++;
+				else if (m === 'x') ng++;
+			}
+			return { mastered, ok, ng, remain: deck.count - mastered - ok - ng };
 		}
 
 		function updateSummary(deck) {
-			const ds = deckState(deck.id);
-			let mastered = 0;
-			let review = 0;
-			for (let n = 1; n <= deck.count; n++) {
-				const s = ds[n];
-				if (s === 'mastered') mastered++;
-				else if (s === 'review') review++;
-			}
-			const remain = deck.count - mastered;
+			const c = countDeck(deck);
 			const el = document.getElementById(`sum-${deck.id}`);
 			if (el) {
 				el.querySelector('.j-total').textContent = String(deck.count);
-				el.querySelector('.j-mastered').textContent = String(mastered);
-				el.querySelector('.j-review').textContent = String(review);
-				el.querySelector('.j-remain').textContent = String(remain);
+				el.querySelector('.j-mastered').textContent = String(c.mastered);
+				el.querySelector('.j-ok').textContent = String(c.ok);
+				el.querySelector('.j-ng').textContent = String(c.ng);
+				el.querySelector('.j-remain').textContent = String(deck.count - c.mastered);
 			}
 			const bar = document.getElementById(`bar-${deck.id}`);
-			if (bar) bar.style.width = `${(mastered / deck.count) * 100}%`;
+			if (bar) bar.style.width = `${(c.mastered / deck.count) * 100}%`;
 		}
 
 		function updateDashboard() {
-			let total = 0;
-			let mastered = 0;
-			let review = 0;
+			let total = 0, mastered = 0, ok = 0, ng = 0;
 			const perDeck = [];
 			for (const deck of DECKS) {
-				const ds = deckState(deck.id);
-				let m = 0;
-				let r = 0;
-				for (let n = 1; n <= deck.count; n++) {
-					const s = ds[n];
-					if (s === 'mastered') m++;
-					else if (s === 'review') r++;
-				}
+				const c = countDeck(deck);
 				total += deck.count;
-				mastered += m;
-				review += r;
-				perDeck.push({ deck, m });
+				mastered += c.mastered;
+				ok += c.ok;
+				ng += c.ng;
+				perDeck.push({ deck, m: c.mastered });
 			}
-			const remain = total - mastered;
 			const pct = total ? Math.round((mastered / total) * 100) : 0;
 			document.getElementById('dash-pct').textContent = `${pct}%`;
 			document.getElementById('dash-ring').style.setProperty('--pct', String(pct));
 			document.getElementById('dash-mastered').textContent = String(mastered);
-			document.getElementById('dash-review').textContent = String(review);
-			document.getElementById('dash-remain').textContent = String(remain);
+			document.getElementById('dash-ok').textContent = String(ok);
+			document.getElementById('dash-ng').textContent = String(ng);
+			document.getElementById('dash-remain').textContent = String(total - mastered - ok - ng);
 			document.getElementById('dash-total').textContent = String(total);
 			document.getElementById('dash-decks').innerHTML = perDeck
 				.map(({ deck, m }) => {
@@ -221,6 +381,79 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 				.join('');
 		}
 
+		// ---- 詳細パネル（ダイアログ） ----
+		const dialog = /** @type {HTMLDialogElement} */ (document.getElementById('detail'));
+		const dTitle = document.getElementById('d-title');
+		const dMarks = document.getElementById('d-marks');
+		const dNarrowed = document.getElementById('d-narrowed');
+		const dComment = /** @type {HTMLTextAreaElement} */ (document.getElementById('d-comment'));
+		/** 編集中の対象。{deck, n, btn} */
+		let editing = null;
+
+		function refreshPanel() {
+			const rec = getRec(editing.deck.id, editing.n) || {};
+			dMarks.querySelectorAll('.d-mark').forEach((b) =>
+				b.classList.toggle('active', b.dataset.mark === rec.mark)
+			);
+			dNarrowed.querySelectorAll('button').forEach((b) =>
+				b.classList.toggle('active', Number(b.dataset.narrowed) === (rec.narrowed || 0) && rec.narrowed > 0)
+			);
+			dComment.value = rec.comment || '';
+		}
+
+		function commitEdit(mutate) {
+			const rec = { ...(getRec(editing.deck.id, editing.n) || {}) };
+			mutate(rec);
+			setRec(editing.deck.id, editing.n, rec);
+			applyCell(editing.btn, getRec(editing.deck.id, editing.n), showMasteredEl.checked);
+			updateSummary(editing.deck);
+			updateDashboard();
+			refreshPanel();
+		}
+
+		function openDetail(deck, n, btn) {
+			editing = { deck, n, btn };
+			dTitle.textContent = `${deck.label} ${n}番`;
+			refreshPanel();
+			dialog.showModal();
+		}
+
+		dMarks.addEventListener('click', (e) => {
+			const b = e.target.closest('.d-mark');
+			if (!b || !editing) return;
+			const mark = b.dataset.mark;
+			// 同じマークをもう一度押したら解除
+			commitEdit((rec) => { rec.mark = rec.mark === mark ? undefined : mark; });
+		});
+
+		dNarrowed.addEventListener('click', (e) => {
+			const b = e.target.closest('button');
+			if (!b || !editing) return;
+			const v = Number(b.dataset.narrowed);
+			commitEdit((rec) => { rec.narrowed = v && rec.narrowed !== v ? v : undefined; });
+		});
+
+		dComment.addEventListener('input', () => {
+			if (!editing) return;
+			commitEdit((rec) => { rec.comment = dComment.value.trim() || undefined; });
+		});
+
+		document.getElementById('d-delete').addEventListener('click', () => {
+			if (!editing) return;
+			setRec(editing.deck.id, editing.n, null);
+			applyCell(editing.btn, undefined, showMasteredEl.checked);
+			updateSummary(editing.deck);
+			updateDashboard();
+			dialog.close();
+		});
+
+		document.getElementById('d-done').addEventListener('click', () => dialog.close());
+		document.getElementById('d-close').addEventListener('click', () => dialog.close());
+		// 背景クリックで閉じる
+		dialog.addEventListener('click', (e) => {
+			if (e.target === dialog) dialog.close();
+		});
+
 		function render() {
 			const showMastered = showMasteredEl.checked;
 			root.innerHTML = '';
@@ -232,8 +465,9 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 					<h2>${deck.label}（${deck.count}問）</h2>
 					<div class="summary" id="sum-${deck.id}">
 						<span>総数 <b class="j-total">0</b></span>
-						<span>理解済み <b class="j-mastered">0</b></span>
-						<span>要復習 <b class="j-review">0</b></span>
+						<span>◎理解 <b class="j-mastered">0</b></span>
+						<span>○できた <b class="j-ok">0</b></span>
+						<span>×復習 <b class="j-ng">0</b></span>
 						<span class="remain">残り <b class="j-remain">0</b></span>
 					</div>
 					<div class="bar"><span id="bar-${deck.id}"></span></div>
@@ -245,18 +479,13 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 					btn.className = 'cell';
 					btn.type = 'button';
 					btn.dataset.n = String(n);
-					btn.textContent = String(n);
+					btn.innerHTML =
+						`<span class="c-num">${n}</span>` +
+						`<span class="c-mark" aria-hidden="true"></span>` +
+						`<span class="c-narrowed" hidden></span>` +
+						`<span class="c-comment" hidden aria-hidden="true"></span>`;
 					applyCell(btn, ds[n], showMastered);
-					btn.addEventListener('click', () => {
-						const cur = ds[n];
-						const next = nextStatus(cur);
-						if (next === undefined) delete ds[n];
-						else ds[n] = next;
-						save();
-						applyCell(btn, ds[n], showMasteredEl.checked);
-						updateSummary(deck);
-						updateDashboard();
-					});
+					btn.addEventListener('click', () => openDetail(deck, n, btn));
 					grid.appendChild(btn);
 				}
 				section.appendChild(grid);
