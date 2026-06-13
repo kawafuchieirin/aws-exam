@@ -23,13 +23,33 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      AWS_REGION: ${{ vars.AWS_REGION }}
+      # vars 未設定でも動くようフォールバックを用意（region/branch は既定値あり）。
+      # AMPLIFY_APP_ID は環境固有のため必須。未設定なら下の検証ステップで明示的に失敗させる。
+      AWS_REGION: ${{ vars.AWS_REGION || 'ap-northeast-1' }}
       AMPLIFY_APP_ID: ${{ vars.AMPLIFY_APP_ID }}
-      AMPLIFY_BRANCH: ${{ vars.AMPLIFY_BRANCH }}
+      AMPLIFY_BRANCH: ${{ vars.AMPLIFY_BRANCH || 'main' }}
       SITE_URL: ${{ vars.SITE_URL }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      # 必須の設定が欠けていると AWS ステップで不明瞭に失敗するため、最初に検証して明確に止める。
+      - name: Validate required configuration
+        env:
+          DEPLOY_ROLE_ARN: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+        run: |
+          set -euo pipefail
+          missing=0
+          if [ -z "${AMPLIFY_APP_ID}" ]; then
+            echo "::error::リポジトリ変数 AMPLIFY_APP_ID が未設定です（Settings > Secrets and variables > Actions > Variables）"
+            missing=1
+          fi
+          if [ -z "${DEPLOY_ROLE_ARN}" ]; then
+            echo "::error::シークレット AWS_DEPLOY_ROLE_ARN が未設定です（OIDC でAssumeするロールARN）"
+            missing=1
+          fi
+          echo "AWS_REGION=${AWS_REGION} / AMPLIFY_BRANCH=${AMPLIFY_BRANCH}"
+          exit $missing
 
       # .mise.toml の node / pnpm / terraform を再現
       - name: Setup mise (node, pnpm)
