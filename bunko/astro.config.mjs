@@ -19,7 +19,13 @@ export default defineConfig({
 			},
 			pagefind: true, // 全文検索（静的・クライアントサイドで完結）
 			sidebar: [
-				{ label: 'ANS-C01 ネットワーク要点', items: [{ autogenerate: { directory: 'ans' } }] },
+				{
+					label: 'ANS-C01 ネットワーク要点',
+					items: [
+						{ label: '📝 問題集トラッカー', link: '/ans/quiz' },
+						{ autogenerate: { directory: 'ans' } },
+					],
+				},
 				{ label: 'AIP-C01 生成AI 参考書', items: [{ autogenerate: { directory: 'aip' } }] },
 			],
 		}),
