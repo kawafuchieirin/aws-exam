@@ -18,6 +18,22 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 		記録は<strong>このブラウザ（端末）</strong>に保存され、次回も残ります。
 	</p>
 
+	<section class="dashboard" id="dashboard" aria-live="polite">
+		<h2>学習の成果</h2>
+		<div class="dash-top">
+			<div class="ring" id="dash-ring" style="--pct:0" role="img" aria-label="理解済みの割合">
+				<div class="ring-center"><b id="dash-pct">0%</b><span>理解済み</span></div>
+			</div>
+			<div class="stats">
+				<div class="stat s-mastered"><b id="dash-mastered">0</b><span>理解済み</span></div>
+				<div class="stat s-review"><b id="dash-review">0</b><span>要復習</span></div>
+				<div class="stat s-remain"><b id="dash-remain">0</b><span>残り</span></div>
+				<div class="stat"><b id="dash-total">0</b><span>総問題数</span></div>
+			</div>
+		</div>
+		<div class="dash-decks" id="dash-decks"></div>
+	</section>
+
 	<div class="legend" aria-hidden="true">
 		<span class="chip s-none">未着手</span>
 		<span class="chip s-mastered">理解済み（みし）</span>
@@ -48,6 +64,34 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 		.s-review::before { background: #ed6c02; }
 		.muted { color: var(--sl-color-gray-3); font-size: 0.9rem; }
 		.toggle { display: inline-flex; align-items: center; gap: 0.4rem; margin: 0.5rem 0 1.5rem; cursor: pointer; }
+
+		/* ダッシュボード（到達度） */
+		.dashboard {
+			border: 1px solid var(--sl-color-gray-5); border-radius: 12px;
+			padding: 1rem 1.25rem 1.25rem; margin: 1rem 0 1.5rem; background: var(--sl-color-gray-7);
+		}
+		.dashboard h2 { margin: 0 0 0.75rem; font-size: 1.1rem; border: none; }
+		.dash-top { display: flex; flex-wrap: wrap; align-items: center; gap: 1.5rem; }
+		.ring {
+			position: relative; width: 128px; height: 128px; border-radius: 50%; flex: none;
+			background: conic-gradient(#2e7d32 calc(var(--pct) * 1%), var(--sl-color-gray-5) 0);
+			transition: background 0.3s;
+		}
+		.ring::before {
+			content: ''; position: absolute; inset: 14px; border-radius: 50%; background: var(--sl-color-bg);
+		}
+		.ring-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+		.ring-center b { font-size: 1.6rem; font-variant-numeric: tabular-nums; line-height: 1; }
+		.ring-center span { font-size: 0.75rem; color: var(--sl-color-gray-3); }
+		.stats { display: grid; grid-template-columns: repeat(2, minmax(5.5rem, 1fr)); gap: 0.75rem 1.5rem; }
+		.stat b { display: block; font-size: 1.6rem; font-variant-numeric: tabular-nums; line-height: 1.1; }
+		.stat span { font-size: 0.8rem; color: var(--sl-color-gray-3); }
+		.stat.s-mastered b { color: #2e7d32; }
+		.stat.s-review b { color: #ed6c02; }
+		.stat.s-remain b { color: var(--sl-color-text-accent); }
+		.dash-decks { margin-top: 1.25rem; display: grid; gap: 0.75rem; }
+		.dash-deck-head { display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 0.25rem; }
+		.dash-deck-head span:last-child { font-variant-numeric: tabular-nums; color: var(--sl-color-gray-3); }
 
 		.deck { margin: 0 0 2.5rem; }
 		.deck h2 { margin-bottom: 0.25rem; }
@@ -139,6 +183,44 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 			if (bar) bar.style.width = `${(mastered / deck.count) * 100}%`;
 		}
 
+		function updateDashboard() {
+			let total = 0;
+			let mastered = 0;
+			let review = 0;
+			const perDeck = [];
+			for (const deck of DECKS) {
+				const ds = deckState(deck.id);
+				let m = 0;
+				let r = 0;
+				for (let n = 1; n <= deck.count; n++) {
+					const s = ds[n];
+					if (s === 'mastered') m++;
+					else if (s === 'review') r++;
+				}
+				total += deck.count;
+				mastered += m;
+				review += r;
+				perDeck.push({ deck, m });
+			}
+			const remain = total - mastered;
+			const pct = total ? Math.round((mastered / total) * 100) : 0;
+			document.getElementById('dash-pct').textContent = `${pct}%`;
+			document.getElementById('dash-ring').style.setProperty('--pct', String(pct));
+			document.getElementById('dash-mastered').textContent = String(mastered);
+			document.getElementById('dash-review').textContent = String(review);
+			document.getElementById('dash-remain').textContent = String(remain);
+			document.getElementById('dash-total').textContent = String(total);
+			document.getElementById('dash-decks').innerHTML = perDeck
+				.map(({ deck, m }) => {
+					const p = Math.round((m / deck.count) * 100);
+					return `<div class="dash-deck">
+						<div class="dash-deck-head"><span>${deck.label}</span><span>${m} / ${deck.count}（${p}%）</span></div>
+						<div class="bar"><span style="width:${p}%"></span></div>
+					</div>`;
+				})
+				.join('');
+		}
+
 		function render() {
 			const showMastered = showMasteredEl.checked;
 			root.innerHTML = '';
@@ -173,6 +255,7 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 						save();
 						applyCell(btn, ds[n], showMasteredEl.checked);
 						updateSummary(deck);
+						updateDashboard();
 					});
 					grid.appendChild(btn);
 				}
@@ -195,6 +278,7 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 				root.appendChild(section);
 				updateSummary(deck);
 			}
+			updateDashboard();
 		}
 
 		showMasteredEl.addEventListener('change', render);
