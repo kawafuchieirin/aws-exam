@@ -11,3 +11,12 @@ keys.txt
 *.decrypted
 *.decrypted.*
 secrets.plain.*
+
+# Terraform — plan成果物(平文の機密を含みうる)・state・ローカル設定はコミットしない
+tfplan
+*.tfplan
+*.tfstate
+*.tfstate.*
+.terraform/
+terraform.tfvars
+# .terraform.lock.hcl はプロバイダ版固定のためコミットする（除外しない）

@@ -40,6 +40,8 @@ mise install                       # sops / age を導入
 sops infra/secrets.sops.yaml
 #   basic_auth_username: <任意のユーザー名>
 #   basic_auth_password: <強いパスワード>
+# エディタを明示したい場合は EDITOR を前置する:
+#   EDITOR=vim sops infra/secrets.sops.yaml
 ```
 
 > ⚠️ age 秘密鍵を紛失すると復号できなくなる。1Password 等にバックアップしておく。
