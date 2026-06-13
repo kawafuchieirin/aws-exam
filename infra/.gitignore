@@ -1,0 +1,16 @@
+# Terraform（.terraform.lock.hcl は再現性のためコミットする）
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+
+# 機密の変数（Basic認証情報など）
+*.tfvars
+!*.tfvars.example
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc

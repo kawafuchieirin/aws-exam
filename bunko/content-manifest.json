@@ -1,0 +1,23 @@
+{
+  "$comment": "要点文庫に載せるソースを厳選して定義する。ここに無いものは公開されない。問題集(questions.md)は意図的に除外。パスは bunko/ からの相対。",
+  "groups": [
+    {
+      "id": "ans",
+      "label": "ANS-C01 ネットワーク要点",
+      "order": 1,
+      "sources": [
+        { "dir": "../exam/ans/services", "match": "README.md", "recursive": true },
+        { "dir": "../exam/ans/services", "match": "MINDMAP.md", "recursive": false }
+      ]
+    },
+    {
+      "id": "aip",
+      "label": "AIP-C01 生成AI 参考書",
+      "order": 2,
+      "sources": [
+        { "dir": "../exam/aip/textbook", "match": "*.md", "recursive": false },
+        { "dir": "../exam/aip/point", "match": "*.md", "recursive": false }
+      ]
+    }
+  ]
+}

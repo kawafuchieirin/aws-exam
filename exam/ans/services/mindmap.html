@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ANS-C01 リソース相関マインドマップ</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #9da7b3;
+    --accent: #f0883e;
+    --accent2: #58a6ff;
+    --link: #58a6ff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+  }
+  header {
+    padding: 32px 24px 24px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(135deg, #161b22 0%, #1c2330 100%);
+  }
+  header h1 { margin: 0 0 8px; font-size: 1.7rem; }
+  header p { margin: 4px 0; color: var(--muted); font-size: .92rem; }
+  .layout { display: flex; max-width: 1400px; margin: 0 auto; }
+  nav {
+    position: sticky; top: 0; align-self: flex-start;
+    width: 230px; padding: 24px 16px; height: 100vh; overflow-y: auto;
+    border-right: 1px solid var(--border); font-size: .88rem;
+  }
+  nav a {
+    display: block; color: var(--muted); text-decoration: none;
+    padding: 6px 10px; border-radius: 6px; margin-bottom: 2px;
+  }
+  nav a:hover { background: var(--panel); color: var(--text); }
+  nav a.active { background: var(--panel); color: var(--accent); border-left: 2px solid var(--accent); }
+  main { flex: 1; padding: 24px 32px 80px; min-width: 0; }
+  section { margin-bottom: 48px; scroll-margin-top: 16px; }
+  section h2 {
+    font-size: 1.3rem; border-bottom: 1px solid var(--border);
+    padding-bottom: 8px; color: var(--accent2);
+  }
+  .card {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px; margin: 16px 0; overflow-x: auto;
+  }
+  .mermaid { display: flex; justify-content: center; }
+  .note {
+    background: rgba(88,166,255,.07); border-left: 3px solid var(--accent2);
+    border-radius: 6px; padding: 12px 16px; margin: 12px 0; font-size: .92rem;
+  }
+  .note strong { color: var(--accent2); }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: .9rem; }
+  th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+  th { background: var(--panel); color: var(--accent); }
+  tr:nth-child(even) td { background: rgba(255,255,255,.02); }
+  code { background: rgba(255,255,255,.08); padding: 2px 6px; border-radius: 4px; font-size: .85em; }
+  a { color: var(--link); }
+  .toolbar { margin: 8px 0 0; }
+  .toolbar button {
+    background: var(--panel); color: var(--text); border: 1px solid var(--border);
+    border-radius: 6px; padding: 6px 14px; cursor: pointer; font-size: .85rem; margin-right: 8px;
+  }
+  .toolbar button:hover { border-color: var(--accent); color: var(--accent); }
+  footer { border-top: 1px solid var(--border); padding: 24px 32px; color: var(--muted); font-size: .85rem; }
+  @media (max-width: 800px) { nav { display: none; } main { padding: 16px; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>ANS-C01 リソース相関マインドマップ</h1>
+  <p>AWS Certified Advanced Networking - Specialty の主要リソースを「どう繋がり・どう依存し合うか」で整理。</p>
+  <p>試験は単体暗記より <strong>組み合わせ設計判断</strong> が問われるため、本資料は相関関係に特化。</p>
+  <div class="toolbar">
+    <button onclick="toggleTheme()">🌓 テーマ切替</button>
+    <button onclick="window.print()">🖨 印刷 / PDF</button>
+  </div>
+</header>
+
+<div class="layout">
+<nav id="toc">
+  <a href="#s1">1. 全体マインドマップ</a>
+  <a href="#s2">2. コア接続性（VPC中心）</a>
+  <a href="#s3">3. ハイブリッド接続選択</a>
+  <a href="#s4">4. エッジ→アプリ層</a>
+  <a href="#s5">5. DNS / 名前解決</a>
+  <a href="#s6">6. セキュリティ/ガバナンス</a>
+  <a href="#s7">7. 監視/トラブルシュート</a>
+  <a href="#s8">8. RAM中心の共有</a>
+  <a href="#s9">まとめ：最重要相関ペア</a>
+</nav>
+
+<main>
+<section id="s1">
+  <h2>1. 全体マインドマップ（俯瞰）</h2>
+  <div class="card"><pre class="mermaid">
+mindmap
+  root((ANS-C01<br/>ネットワーク))
+    接続性
+      VPC
+        Subnet / Route Table
+        IGW / NAT GW / EIGW
+        NACL / Security Group
+        VPC Peering
+      Transit Gateway
+        TGW Attachment
+        TGW Route Table
+        TGW Peering
+        TGW Connect GRE/SD-WAN
+      ハイブリッド
+        Direct Connect
+          Private VIF
+          Transit VIF
+          Public VIF
+          DX Gateway
+        Site-to-Site VPN
+          VGW
+          Customer GW
+        Client VPN
+      PrivateLink
+        Interface Endpoint
+        Gateway Endpoint
+        Endpoint Service
+    トラフィック分散
+      ELB
+        ALB L7
+        NLB L4
+        GWLB GENEVE
+      Global Accelerator
+      CloudFront
+      API Gateway
+    DNS / 検出
+      Route 53
+        Public / Private HZ
+        Resolver in/out
+        ルーティングポリシー
+        ヘルスチェック
+      Cloud Map
+      App Mesh
+    セキュリティ
+      WAF
+      Shield
+      Network Firewall
+      Firewall Manager
+      IAM
+    監視 / 運用
+      CloudWatch
+      VPC Flow Logs
+      CloudTrail
+      Reachability Analyzer
+      Traffic Mirroring
+    ガバナンス / 共有
+      Organizations
+      RAM
+      Config / Control Tower
+  </pre></div>
+</section>
+
+<section id="s2">
+  <h2>2. コア接続性の相関図（VPC を中心に）</h2>
+  <div class="card"><pre class="mermaid">
+flowchart TB
+    subgraph onprem[オンプレミス / 他組織]
+        CGW[Customer Gateway ルータ]
+        ONP[オンプレ拠点]
+    end
+    subgraph aws[AWS]
+        TGW{{Transit Gateway ハブ}}
+        DXGW[Direct Connect Gateway]
+        subgraph vpcA[VPC A]
+            SNA[Subnet/RT]
+            EP[Interface Endpoint]
+        end
+        subgraph vpcB[VPC B]
+            SNB[Subnet/RT]
+        end
+        subgraph svcvpc[サービス提供VPC]
+            NLBe[NLB] --> EPS[Endpoint Service]
+        end
+    end
+    ONP --- CGW
+    CGW -- IPsec/BGP --> VPN[Site-to-Site VPN]
+    ONP -- 専用線/BGP --> DX[Direct Connect]
+    DX -- Private VIF --> DXGW
+    DX -- Transit VIF --> TGW
+    DXGW --> TGW
+    VPN --> TGW
+    TGW === vpcA
+    TGW === vpcB
+    vpcA <-- VPC Peering --> vpcB
+    EP -. PrivateLink .-> EPS
+    classDef hub fill:#f96,stroke:#333,stroke-width:2px,color:#000;
+    class TGW hub;
+  </pre></div>
+  <div class="note">
+    <strong>読み解きポイント</strong>
+    <ul>
+      <li><strong>TGW がハブ</strong>: 多数 VPC ＋ ハイブリッドを集中管理。スポーク間は TGW ルートテーブルで制御。</li>
+      <li><strong>VPC Peering</strong> は少数 VPC・低コスト・推移的ルーティング不可（A↔B↔C で A↔C は不可）。</li>
+      <li><strong>PrivateLink</strong> は CIDR 重複していても単一サービスへ到達可能（NLB 裏付け）。</li>
+      <li><strong>DX の VIF 使い分け</strong>: Private VIF→単一/少数VPC、Transit VIF→TGW経由で多数VPC、Public VIF→AWSパブリックサービス。</li>
+    </ul>
+  </div>
+</section>
+
+<section id="s3">
+  <h2>3. ハイブリッド接続の選択フロー</h2>
+  <div class="card"><pre class="mermaid">
+flowchart TD
+    Q1{安定した専用帯域が必要?}
+    Q1 -- はい --> DX[Direct Connect]
+    Q1 -- いいえ/即時 --> VPN[Site-to-Site VPN]
+    DX --> Q2{冗長/バックアップは?}
+    Q2 -- 低コスト冗長 --> VPNb[VPN を DX バックアップに]
+    Q2 -- DX上を暗号化 --> PIPVPN[Private IP VPN over DX Transit VIF]
+    DX --> Q3{接続先VPC数は?}
+    Q3 -- 少数 --> PVIF[Private VIF + DXGW]
+    Q3 -- 多数/集中管理 --> TVIF[Transit VIF + TGW]
+    VPN --> Q4{接続先は?}
+    Q4 -- 単一VPC --> VGW[VGW アタッチ]
+    Q4 -- 多数VPC --> TGWa[TGW アタッチ]
+  </pre></div>
+</section>
+
+<section id="s4">
+  <h2>4. エッジ → アプリ層のトラフィック相関</h2>
+  <div class="card"><pre class="mermaid">
+flowchart LR
+    USER([クライアント])
+    USER --> GA[Global Accelerator 静的Anycast IP / 非HTTP低遅延]
+    USER --> CF[CloudFront CDN / 静的+動的]
+    CF --> WAF[AWS WAF]
+    WAF -.保護.-> SHLD[Shield Advanced]
+    CF --> ALB
+    GA --> NLB
+    APIGW[API Gateway] --> ALB
+    subgraph elb[Elastic Load Balancing]
+        ALB[ALB L7]
+        NLB[NLB L4 静的IP]
+        GWLB[GWLB GENEVE]
+    end
+    ALB --> TG[Target Group]
+    NLB --> TG
+    TG --> EC2[EC2]
+    TG --> ECS[ECS/Fargate]
+    TG --> LMB[Lambda]
+    GWLB -. 透過挿入 .-> APPL[サードパーティFW/IDS]
+    NLB --> EPS2[PrivateLink Endpoint Service]
+  </pre></div>
+  <div class="note">
+    <strong>読み解きポイント</strong>
+    <ul>
+      <li><strong>WAF は ALB / CloudFront / API Gateway に紐付け</strong>。Shield Advanced はそれらに加えて Global Accelerator / EIP も保護。</li>
+      <li><strong>NLB は PrivateLink の裏付け</strong>（Endpoint Service）になる唯一の ELB。</li>
+      <li><strong>GWLB は GENEVE(6081)</strong> でセキュリティアプライアンスへ透過的に挿入。</li>
+    </ul>
+  </div>
+</section>
+
+<section id="s5">
+  <h2>5. DNS / 名前解決の相関</h2>
+  <div class="card"><pre class="mermaid">
+flowchart TB
+    subgraph onp[オンプレDNS]
+        ONDNS[社内DNSサーバ]
+    end
+    subgraph r53[Route 53]
+        PUB[Public Hosted Zone]
+        PHZ[Private Hosted Zone]
+        RIN[Resolver Inbound EP]
+        ROUT[Resolver Outbound EP]
+        RULE[Resolver Rule]
+        HC[Health Check]
+    end
+    ONDNS -- AWS名を解決 --> RIN
+    ROUT -- オンプレ名を転送 --> ONDNS
+    RULE --> ROUT
+    PHZ -- VPC関連付け --> VPCx[VPC]
+    PUB --> POL[ルーティングポリシー 加重/レイテンシ/フェイルオーバー/地理]
+    HC --> POL
+    RAM2[RAM] -. PHZ/Resolverルール共有 .-> ACCTS[他アカウントVPC]
+  </pre></div>
+  <div class="note">
+    <strong>読み解きポイント</strong>
+    <ul>
+      <li><strong>Inbound EP</strong> = オンプレ → AWS の名前解決、<strong>Outbound EP + Rule</strong> = AWS → オンプレ。双方向で「ハイブリッドDNS」。</li>
+      <li><strong>PHZ と Resolver ルールは RAM で共有</strong> し、共有サービス VPC に集約するのが定石。</li>
+    </ul>
+  </div>
+</section>
+
+<section id="s6">
+  <h2>6. セキュリティ・ガバナンスの相関</h2>
+  <div class="card"><pre class="mermaid">
+flowchart TB
+    ORG[Organizations] --> FM[Firewall Manager]
+    FM -- 一括ポリシー強制 --> WAFr[WAF]
+    FM --> SHLDr[Shield Advanced]
+    FM --> NFW[Network Firewall]
+    FM --> SGp[Security Group ポリシー]
+    ORG --> RAM3[RAM TGW/Subnet/Resolver共有]
+    ORG --> CT[Control Tower / Config]
+    subgraph insp[インスペクションVPC]
+        NFW
+        GWLBi[GWLB]
+    end
+    TGWc{{Transit Gateway}} -- 全トラフィック誘導 --> insp
+  </pre></div>
+  <div class="note">
+    <strong>読み解きポイント</strong>
+    <ul>
+      <li><strong>集中型インスペクション</strong>: TGW で全トラフィックをインスペクション VPC に誘導 → Network Firewall / GWLB で検査。</li>
+      <li><strong>Firewall Manager は Organizations 配下に組織横断ポリシーを強制</strong>（新規アカウントにも自動適用）。</li>
+    </ul>
+  </div>
+</section>
+
+<section id="s7">
+  <h2>7. 監視・トラブルシュートの相関</h2>
+  <div class="card"><pre class="mermaid">
+flowchart LR
+    VPCm[VPC] --> FL[VPC Flow Logs メタデータ ACCEPT/REJECT]
+    VPCm --> TM[Traffic Mirroring パケット中身]
+    FL --> CW[CloudWatch Logs]
+    FL --> S3l[S3]
+    TM --> APPLm[解析アプライアンス/IDS]
+    RA[Reachability Analyzer 到達性の構成検証] -. 設定ベース .-> VPCm
+    CW --> ALM[CloudWatch Alarm]
+    CTr[CloudTrail API監査] --> S3l
+  </pre></div>
+  <div class="note">
+    <strong>読み解きポイント</strong>
+    <ul>
+      <li><strong>Flow Logs = メタデータ</strong>（誰が誰へ・許可/拒否）、<strong>Traffic Mirroring = パケット実体</strong>。用途で使い分け。</li>
+      <li><strong>Reachability Analyzer</strong> は実トラフィックを流さず構成から到達性を検証（SG/NACL/RT のミス検出）。</li>
+    </ul>
+  </div>
+</section>
+
+<section id="s8">
+  <h2>8. 共有・マルチアカウント（RAM 中心）</h2>
+  <div class="card"><pre class="mermaid">
+flowchart TB
+    RAMc((RAM))
+    RAMc --> TGWs[Transit Gateway 共有]
+    RAMc --> SUBs[Subnet 共有 VPC Sharing]
+    RAMc --> RSLVs[Resolver Rule 共有]
+    RAMc --> PHZs[Private Hosted Zone 関連付け]
+    RAMc --> PFXs[Prefix List 共有]
+    ORGr[Organizations] -. 信頼関係 .-> RAMc
+  </pre></div>
+</section>
+
+<section id="s9">
+  <h2>まとめ：暗記すべき相関の最重要ペア</h2>
+  <table>
+    <thead><tr><th>起点</th><th>相関先</th><th>関係の本質</th></tr></thead>
+    <tbody>
+      <tr><td>Transit Gateway</td><td>VPC / VPN / DX(Transit VIF)</td><td>ハブ＆スポークの中心。スポーク間制御は TGW ルートテーブル</td></tr>
+      <tr><td>PrivateLink</td><td>NLB / Endpoint Service</td><td>CIDR重複でも単一サービスへ到達（NLB裏付け）</td></tr>
+      <tr><td>Direct Connect</td><td>DXGW(Private VIF) / TGW(Transit VIF)</td><td>接続VPC数で VIF を選択</td></tr>
+      <tr><td>WAF</td><td>ALB / CloudFront / API Gateway</td><td>L7保護の貼り付け先</td></tr>
+      <tr><td>Shield Advanced</td><td>CloudFront / GA / NLB / EIP</td><td>DDoS保護対象</td></tr>
+      <tr><td>Route 53 Resolver</td><td>オンプレDNS（in/out EP）</td><td>ハイブリッドDNSの双方向</td></tr>
+      <tr><td>Firewall Manager</td><td>Organizations / WAF / NFW / SG</td><td>組織横断ポリシー強制</td></tr>
+      <tr><td>RAM</td><td>TGW / Subnet / Resolver / PHZ</td><td>マルチアカウント共有の起点</td></tr>
+      <tr><td>GWLB</td><td>セキュリティアプライアンス(GENEVE)</td><td>透過的インスペクション挿入</td></tr>
+      <tr><td>VPC Flow Logs</td><td>CloudWatch / S3</td><td>トラフィックメタデータの可視化</td></tr>
+    </tbody>
+  </table>
+</section>
+</main>
+</div>
+
+<footer>
+  出典: AWS公式「ANS-C01 試験ガイド」バージョン 2.0 ／ サービス詳細は <code>services/README.md</code> を参照。
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"
+        integrity="sha384-rbtjAdnIQE/aQJGEgXrVUlMibdfTSa4PQju4HDhN3sR2PmaKFzhEafuePsl9H/9I"
+        crossorigin="anonymous"></script>
+<script>
+  let dark = true;
+  function initMermaid() {
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: dark ? 'dark' : 'default',
+      securityLevel: 'loose',
+      mindmap: { padding: 16 },
+      flowchart: { curve: 'basis', useMaxWidth: true }
+    });
+  }
+  initMermaid();
+
+  function toggleTheme() {
+    dark = !dark;
+    document.documentElement.style.setProperty('--bg', dark ? '#0d1117' : '#ffffff');
+    document.documentElement.style.setProperty('--panel', dark ? '#161b22' : '#f6f8fa');
+    document.documentElement.style.setProperty('--border', dark ? '#30363d' : '#d0d7de');
+    document.documentElement.style.setProperty('--text', dark ? '#e6edf3' : '#1f2328');
+    document.documentElement.style.setProperty('--muted', dark ? '#9da7b3' : '#656d76');
+    location.reload();
+  }
+
+  // TOC scroll spy
+  const links = document.querySelectorAll('#toc a');
+  const sections = document.querySelectorAll('main section');
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const a = document.querySelector('#toc a[href="#' + e.target.id + '"]');
+        if (a) a.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(s => obs.observe(s));
+</script>
+</body>
+</html>
