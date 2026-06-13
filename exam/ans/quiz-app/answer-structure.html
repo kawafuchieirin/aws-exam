@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AWS ANS-C01 解答 構成図</title>
+<style>
+  :root{
+    --bg:#0f1b2d; --panel:#16263d; --panel2:#1d3450; --ink:#e9eef5;
+    --muted:#9fb3c8; --line:#2c4357;
+    --aws:#ff9900; --aws-d:#ec7211; --blue:#2563eb; --green:#16a34a;
+    --teal:#0891b2; --purple:#7c3aed; --rose:#e11d48; --slate:#475569;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 600px at 80% -10%,#1b3a5c,#0f1b2d 60%);
+    color:#e9eef5;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+    line-height:1.5;padding:32px 20px 64px;}
+  .wrap{max-width:1180px;margin:0 auto}
+  header{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:8px}
+  .badge{background:linear-gradient(135deg,#ff9900,#ec7211);color:#1a1a1a;font-weight:800;
+    padding:6px 12px;border-radius:8px;font-size:13px;letter-spacing:.5px}
+  h1{font-size:26px;margin:0;font-weight:800}
+  .sub{color:#9fb3c8;font-size:14px;margin:2px 0 26px}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:30px}
+  .kpi{background:#16263d;border:1px solid #29435a;border-radius:14px;padding:16px 18px;
+    box-shadow:0 1px 0 rgba(255,255,255,.03) inset}
+  .kpi .n{font-size:30px;font-weight:800;color:#ff9900}
+  .kpi .l{color:#9fb3c8;font-size:13px;margin-top:2px}
+  .kpi.ok .n{color:#34d399}
+  h2{font-size:17px;margin:28px 0 14px;display:flex;align-items:center;gap:10px}
+  h2::before{content:"";width:6px;height:18px;background:#ff9900;border-radius:3px}
+
+  /* pipeline */
+  .pipe{display:flex;align-items:stretch;gap:0;flex-wrap:wrap}
+  .step{flex:1;min-width:150px;background:#16263d;border:1px solid #2c4357;border-radius:12px;
+    padding:14px 14px;position:relative}
+  .step .t{font-weight:700;font-size:14px;margin-bottom:4px}
+  .step .d{color:#9fb3c8;font-size:12px}
+  .step .ico{font-size:20px;margin-bottom:6px}
+  .arrow{display:flex;align-items:center;justify-content:center;color:#ff9900;font-size:22px;
+    width:34px;font-weight:800}
+
+  /* category grid */
+  .cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+  .cat{background:#16263d;border:1px solid #2c4357;border-radius:14px;overflow:hidden;
+    border-top:4px solid var(--c)}
+  .cat h3{margin:0;padding:12px 14px 8px;font-size:14px;display:flex;justify-content:space-between;align-items:center}
+  .cat h3 .cnt{background:rgba(255,255,255,.08);color:#e9eef5;border-radius:20px;
+    padding:2px 10px;font-size:12px;font-weight:700}
+  .cat ul{list-style:none;margin:0;padding:6px 10px 12px}
+  .cat li{display:flex;justify-content:space-between;font-size:12.5px;padding:3px 6px;
+    border-radius:6px;color:#cdd9e6}
+  .cat li:hover{background:rgba(255,255,255,.05)}
+  .cat li .q{color:#ff9900;font-variant-numeric:tabular-nums;font-weight:700}
+  .pill{font-size:11px;color:#0f1b2d;background:var(--c);padding:1px 7px;border-radius:20px;font-weight:700}
+
+  /* distribution bars */
+  .dist{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  .panel{background:#16263d;border:1px solid #2c4357;border-radius:14px;padding:16px 18px}
+  .row{display:flex;align-items:center;gap:10px;margin:9px 0}
+  .row .lab{width:130px;font-size:13px;color:#cdd9e6}
+  .bar{flex:1;height:18px;background:#0f1b2d;border-radius:9px;overflow:hidden}
+  .bar span{display:block;height:100%;border-radius:9px}
+  .row .v{width:64px;text-align:right;font-size:12.5px;color:#9fb3c8;font-variant-numeric:tabular-nums}
+
+  footer{margin-top:34px;color:#6b829c;font-size:12px;text-align:center}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:#9fb3c8;margin-top:10px}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="badge">AWS ANS-C01</span>
+    <h1>解答 構成図 — 問題バンク &amp; 採点パイプライン</h1>
+  </header>
+  <div class="sub">exam/ans/services 配下の全サービス README から生成した問題バンクを、アプリのパーサで解いて採点・解説出力する全体像。生成日 2026-05-24</div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="n">462</div><div class="l">総問題数</div></div>
+    <div class="kpi"><div class="n">43</div><div class="l">サービス / 8 カテゴリ</div></div>
+    <div class="kpi ok"><div class="n">100%</div><div class="l">採点可能（整合性OK）</div></div>
+    <div class="kpi"><div class="n">79</div><div class="l">multi設問（複数選択）</div></div>
+  </div>
+
+  <h2>解答パイプライン</h2>
+  <div class="pipe">
+    <div class="step"><div class="ico">📄</div><div class="t">README.md</div><div class="d">各サービスの学習資料（出典・SHA256）</div></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="ico">📝</div><div class="t">questions.md</div><div class="d">SPEC準拠の問題バンク（43ファイル）</div></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="ico">🔍</div><div class="t">parser.py</div><div class="d">frontmatter / 設問 / 選択肢[x] / 解説・出典を抽出</div></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="ico">✅</div><div class="t">solve_all.py</div><div class="d">模範解答で解答→採点→整合性検証</div></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="ico">📊</div><div class="t">ANSWERS.md</div><div class="d">全462問の正誤・解説・出典</div></div>
+  </div>
+
+  <h2>カテゴリ別 構成（サービス → 問題数）</h2>
+  <div class="cats" id="cats"></div>
+
+  <h2>分布</h2>
+  <div class="dist">
+    <div class="panel">
+      <strong style="font-size:14px">試験分野別</strong>
+      <div id="domains" style="margin-top:8px"></div>
+    </div>
+    <div class="panel">
+      <strong style="font-size:14px">難易度別</strong>
+      <div id="diffs" style="margin-top:8px"></div>
+    </div>
+  </div>
+
+  <h2>1問の解答構造（データモデル）</h2>
+  <div class="panel">
+    <div class="pipe" style="gap:0">
+      <div class="step"><div class="t">id / service</div><div class="d">vpc-001 等の連番ID</div></div>
+      <div class="arrow">+</div>
+      <div class="step"><div class="t">type</div><div class="d">single（4択1正解）/ multi（5択2正解以上）</div></div>
+      <div class="arrow">+</div>
+      <div class="step"><div class="t">difficulty / domain / tags</div><div class="d">適応出題のスコアリングに使用</div></div>
+      <div class="arrow">+</div>
+      <div class="step"><div class="t">options [x]</div><div class="d">正解ラベルを判定</div></div>
+      <div class="arrow">+</div>
+      <div class="step"><div class="t">explanation / source</div><div class="d">「なぜ」+ README見出しリンク</div></div>
+    </div>
+  </div>
+
+  <footer>生成: solve_all.py（aws_quiz.parser 利用） ／ 全問は ANSWERS.md を参照</footer>
+</div>
+
+<script>
+const cats = [
+  {name:"networking-content-delivery", c:"#2563eb", total:155, svc:[
+    ["direct-connect",14],["cloudfront",13],["api-gateway",12],["client-vpn",12],
+    ["elastic-load-balancing",12],["global-accelerator",12],["privatelink",12],
+    ["route-53",12],["site-to-site-vpn",12],["transit-gateway",12],["vpc",12],
+    ["app-mesh",10],["cloud-map",10]]},
+  {name:"management-governance", c:"#0891b2", total:120, svc:[
+    ["cloudwatch",12],["cloudtrail",11],["config",11],["organizations",11],
+    ["auto-scaling",10],["aws-cli",10],["cloudformation",10],["control-tower",10],
+    ["well-architected-tool",10],["trusted-advisor",9],["health-dashboard",8],
+    ["management-console",8]]},
+  {name:"security-identity-compliance", c:"#e11d48", total:62, svc:[
+    ["network-firewall",11],["waf",11],["firewall-manager",10],["iam",10],
+    ["ram",10],["shield",10]]},
+  {name:"containers", c:"#7c3aed", total:40, svc:[
+    ["eks",11],["ecr",10],["ecs",10],["fargate",9]]},
+  {name:"compute", c:"#16a34a", total:32, svc:[
+    ["ec2",11],["lambda",11],["ec2-auto-scaling",10]]},
+  {name:"app-integration", c:"#f59e0b", total:30, svc:[
+    ["eventbridge",10],["sns",10],["sqs",10]]},
+  {name:"storage", c:"#14b8a6", total:12, svc:[["s3",12]]},
+  {name:"cost-management", c:"#94a3b8", total:11, svc:[["cost-explorer",11]]},
+];
+const catEl = document.getElementById("cats");
+cats.forEach(cat=>{
+  const items = cat.svc.map(([s,n])=>`<li><span>${s}</span><span class="q">${n}</span></li>`).join("");
+  catEl.insertAdjacentHTML("beforeend",
+    `<div class="cat" style="--c:${cat.c}">
+       <h3><span>${cat.name}</span><span class="cnt">${cat.total}問</span></h3>
+       <ul>${items}</ul>
+     </div>`);
+});
+
+function bars(elId, data, total, color){
+  const el = document.getElementById(elId);
+  data.forEach(([lab,v,c])=>{
+    const pct = (v/total*100).toFixed(0);
+    el.insertAdjacentHTML("beforeend",
+      `<div class="row"><div class="lab">${lab}</div>
+        <div class="bar"><span style="width:${pct}%;background:${c||color}"></span></div>
+        <div class="v">${v} (${pct}%)</div></div>`);
+  });
+}
+bars("domains",[
+  ["分野1 設計",179,"#2563eb"],
+  ["分野2 実装",31,"#0891b2"],
+  ["分野3 運用・最適化",111,"#16a34a"],
+  ["分野4 セキュリティ",141,"#e11d48"]],462);
+bars("diffs",[
+  ["easy",77,"#16a34a"],
+  ["medium",265,"#f59e0b"],
+  ["hard",120,"#e11d48"]],462);
+</script>
+</body>
+</html>

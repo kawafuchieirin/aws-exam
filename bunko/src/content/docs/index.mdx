@@ -1,0 +1,33 @@
+---
+title: 要点文庫
+description: AWS試験対策の自分用 要点まとめ。スマホからセキュアに閲覧。
+template: splash
+hero:
+  tagline: AWS試験対策の要点を、いつでもスマホから。
+  actions:
+    - text: ネットワーク要点 (ANS-C01)
+      link: /ans/
+      icon: right-arrow
+      variant: primary
+    - text: 生成AI 参考書 (AIP-C01)
+      link: /aip/
+      icon: right-arrow
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+<CardGrid stagger>
+	<Card title="厳選された要点" icon="open-book">
+		既存の学習ノートから「要点」だけを自動同期。問題集は除外し、復習に集中できます。
+	</Card>
+	<Card title="全文検索" icon="magnifier">
+		右上の検索からサービス名・キーワードで横断検索（クライアントサイドで完結）。
+	</Card>
+	<Card title="セキュアに公開" icon="approve-check">
+		AWS Amplify の Basic 認証で保護。自分だけがどこからでも閲覧できます。
+	</Card>
+	<Card title="自動で最新" icon="rocket">
+		原本ノートを編集して push すると、GitHub Actions が自動でビルド・デプロイします。
+	</Card>
+</CardGrid>

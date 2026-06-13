@@ -1,0 +1,68 @@
+総問題数         : 532
+サービス数       : 50
+正答数 / 正答率  : 532 / 532  (100.0%)
+整合性チェック   : ✅ 問題なし（全問が出題・採点可能）
+
+[分野別]
+  分野0 基礎　　　　　　:  70/70  (100%)
+  分野1 設計　　　　　　: 179/179 (100%)
+  分野2 実装　　　　　　:  31/31  (100%)
+  分野3 運用・最適化　　: 111/111 (100%)
+  分野4 セキュリティ　　: 141/141 (100%)
+
+[難易度別]
+  easy   :  99/99  (100%)
+  medium : 303/303 (100%)
+  hard   : 130/130 (100%)
+
+[サービス別]
+  api-gateway               : 12/12
+  app-mesh                  : 10/10
+  auto-scaling              : 10/10
+  aws-cli                   : 10/10
+  client-vpn                : 12/12
+  cloud-map                 : 10/10
+  cloudformation            : 10/10
+  cloudfront                : 13/13
+  cloudtrail                : 11/11
+  cloudwatch                : 12/12
+  config                    : 11/11
+  control-tower             : 10/10
+  cost-explorer             : 11/11
+  direct-connect            : 14/14
+  dns                       : 10/10
+  ec2                       : 11/11
+  ec2-auto-scaling          : 10/10
+  ecr                       : 10/10
+  ecs                       : 10/10
+  eks                       : 11/11
+  elastic-load-balancing    : 12/12
+  eventbridge               : 10/10
+  fargate                   :  9/9 
+  firewall-manager          : 10/10
+  global-accelerator        : 12/12
+  health-dashboard          :  8/8 
+  iam                       : 10/10
+  ip-addressing-subnetting  : 10/10
+  lambda                    : 11/11
+  management-console        :  8/8 
+  nat-and-load-balancing-concepts: 10/10
+  network-firewall          : 11/11
+  organizations             : 11/11
+  osi-and-encapsulation     : 10/10
+  privatelink               : 12/12
+  ram                       : 10/10
+  route-53                  : 12/12
+  routing-bgp               : 10/10
+  s3                        : 12/12
+  shield                    : 10/10
+  site-to-site-vpn          : 12/12
+  sns                       : 10/10
+  sqs                       : 10/10
+  tls-and-vpn-crypto        : 10/10
+  transit-gateway           : 12/12
+  transport-tcp-udp         : 10/10
+  trusted-advisor           :  9/9 
+  vpc                       : 12/12
+  waf                       : 11/11
+  well-architected-tool     : 10/10

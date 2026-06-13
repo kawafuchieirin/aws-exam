@@ -1,0 +1,91 @@
+name: Deploy 要点文庫 (bunko)
+
+# 要点ノート or サイトを更新して main に push すると、ビルドして Amplify へ手動デプロイする。
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'bunko/**'
+      - 'exam/**' # 原本ノートの更新も反映
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch: {}
+
+# OIDC でAWSへキーレス認証するために id-token: write が必須
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: bunko-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      AMPLIFY_APP_ID: ${{ vars.AMPLIFY_APP_ID }}
+      AMPLIFY_BRANCH: ${{ vars.AMPLIFY_BRANCH }}
+      SITE_URL: ${{ vars.SITE_URL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # .mise.toml の node / pnpm / terraform を再現
+      - name: Setup mise (node, pnpm)
+        uses: jdx/mise-action@v2
+
+      - name: Install dependencies
+        working-directory: bunko
+        run: pnpm install --frozen-lockfile
+
+      - name: Build (sync notes + astro build)
+        working-directory: bunko
+        run: pnpm build
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy to Amplify (manual deployment)
+        working-directory: bunko
+        run: |
+          set -euo pipefail
+          # ビルド成果物を zip 化
+          (cd dist && zip -q -r ../dist.zip .)
+
+          # デプロイ枠を作成（zipアップロード用の署名付きURLとjobIdが返る）
+          CREATE=$(aws amplify create-deployment \
+            --app-id "$AMPLIFY_APP_ID" \
+            --branch-name "$AMPLIFY_BRANCH" \
+            --output json)
+          UPLOAD_URL=$(echo "$CREATE" | jq -r '.zipUploadUrl')
+          JOB_ID=$(echo "$CREATE" | jq -r '.jobId')
+
+          # 署名付きURLへアップロード（認証は不要、URL自体に署名）
+          curl -fsS -H "Content-Type: application/zip" --upload-file dist.zip "$UPLOAD_URL"
+
+          # デプロイ開始
+          aws amplify start-deployment \
+            --app-id "$AMPLIFY_APP_ID" \
+            --branch-name "$AMPLIFY_BRANCH" \
+            --job-id "$JOB_ID"
+
+          # 完了までポーリング
+          echo "Waiting for job $JOB_ID ..."
+          for i in $(seq 1 60); do
+            STATUS=$(aws amplify get-job \
+              --app-id "$AMPLIFY_APP_ID" \
+              --branch-name "$AMPLIFY_BRANCH" \
+              --job-id "$JOB_ID" \
+              --query 'job.summary.status' --output text)
+            echo "  status=$STATUS"
+            case "$STATUS" in
+              SUCCEED) echo "Deploy succeeded: $SITE_URL"; exit 0 ;;
+              FAILED|CANCELLED) echo "Deploy $STATUS"; exit 1 ;;
+            esac
+            sleep 5
+          done
+          echo "Timed out waiting for deployment"; exit 1
