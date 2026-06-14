@@ -41,22 +41,16 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 	</section>
 
 	<div class="legend" aria-hidden="true">
-		<span class="chip s-none">未着手</span>
-		<span class="chip s-ng">× 要復習</span>
-		<span class="chip s-ok">○ できた</span>
-		<span class="chip s-mastered">◎ 理解できた</span>
-		<span class="chip s-meta">① メモ・タグあり</span>
+		<span class="chip cat-none">未着手（色なし）</span>
+		<span class="chip cat-red">赤: わからなかった</span>
+		<span class="chip cat-yellow">黄: あっていたが理由は曖昧</span>
+		<span class="chip cat-blue">青: その他（理解できた等）</span>
 	</div>
 	<p class="muted">
-		番号をタップ → パネルで <strong>×／○／◎</strong> を選び、<strong>振り返りメモ</strong>や
-		<strong>「○択まで絞れた」</strong>を記録できます。
-		<strong>◎（理解できた）</strong>は一覧から隠れ、解く対象から外れます。下のトグルでいつでも再表示できます。
+		番号をタップ → パネルで <strong>×（わからなかった）／○（あっていたが細かい理由は曖昧）／◎（理解できた）</strong>
+		を記録できます。番号は <strong>赤／黄／青</strong> で色分けされ、<strong>未着手は色なし</strong>です。
+		メモ・タグ・絞り込みはパネル内にまとまり、番号には表示しません。
 	</p>
-
-	<label class="toggle">
-		<input type="checkbox" id="show-mastered" />
-		◎（理解できた）も表示する
-	</label>
 
 	<div id="tracker"></div>
 
@@ -135,13 +129,7 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 			border: 1px solid var(--sl-color-gray-5);
 		}
 		.chip::before { content: ''; width: 0.7rem; height: 0.7rem; border-radius: 3px; display: inline-block; }
-		.s-none::before { background: var(--sl-color-gray-4); }
-		.s-mastered::before { background: #2e7d32; }
-		.s-ok::before { background: #f9a825; }
-		.s-ng::before { background: #c62828; }
-		.s-meta::before { background: var(--sl-color-text-accent); border-radius: 50%; }
 		.muted { color: var(--sl-color-gray-3); font-size: 0.9rem; }
-		.toggle { display: inline-flex; align-items: center; gap: 0.4rem; margin: 0.5rem 0 1.5rem; cursor: pointer; }
 
 		/* ダッシュボード（到達度） */
 		.dashboard {
@@ -226,20 +214,6 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 		}
 		.cell:hover { border-color: var(--sl-color-text-accent); }
 		.cell .c-num { font-size: 0.85rem; }
-		.cell .c-mark { position: absolute; top: 1px; left: 3px; font-size: 0.7rem; font-weight: 700; }
-		.cell .c-narrowed {
-			position: absolute; bottom: 0; right: 2px; font-size: 0.58rem; font-weight: 700;
-			padding: 0 0.15rem; border-radius: 3px; background: rgba(0, 0, 0, 0.35);
-		}
-		.cell .c-comment {
-			position: absolute; top: 3px; right: 3px; width: 6px; height: 6px;
-			border-radius: 50%; background: var(--sl-color-text-accent);
-		}
-		.cell.mark-x { background: #c62828; color: #fff; border-color: #c62828; }
-		.cell.mark-o { background: #f9a825; color: #1a1a1a; border-color: #f9a825; }
-		.cell.mark-o .c-comment { background: #1a1a1a; }
-		.cell.mark-oo { background: #2e7d32; color: #fff; border-color: #2e7d32; }
-		.cell.mark-oo.dimmed { opacity: 0.45; }
 
 		.deck-actions { margin-top: 0.75rem; }
 		.deck-actions button {
@@ -346,9 +320,10 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 		   洗練されたダイアログを定義。light/dark 両対応。
 		   ========================================================= */
 		.quiz {
-			--q-ng: #e5484d;            /* × 要復習 */
-			--q-ok: #e8930c;            /* ○ できた */
-			--q-oo: #2fa84f;            /* ◎ 理解できた */
+			--q-ng: #e5484d;            /* × わからなかった → 赤 */
+			--q-ok: #e8930c;            /* ○ あっていたが理由は曖昧 → 黄 */
+			--q-oo: #2fa84f;            /* ◎ 理解できた（ダッシュボード/ノート用の緑） */
+			--q-blue: #3b82f6;          /* その他（番号セルの青） */
 			--q-ng-soft: color-mix(in srgb, var(--q-ng) 15%, transparent);
 			--q-ok-soft: color-mix(in srgb, var(--q-ok) 16%, transparent);
 			--q-oo-soft: color-mix(in srgb, var(--q-oo) 15%, transparent);
@@ -421,14 +396,10 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 		/* --- 凡例・トグル --- */
 		.legend { gap: 0.4rem 0.55rem; margin: 1.4rem 0 0.5rem; }
 		.chip { background: var(--q-surface); border-color: var(--q-line); padding: 0.2rem 0.65rem; }
-		.s-mastered::before { background: var(--q-oo); }
-		.s-ok::before { background: var(--q-ok); }
-		.s-ng::before { background: var(--q-ng); }
-		.toggle {
-			padding: 0.4rem 0.85rem; border-radius: 999px; font-size: 0.85rem;
-			border: 1px solid var(--q-line); background: var(--q-surface); transition: border-color 0.15s;
-		}
-		.toggle:hover { border-color: var(--sl-color-text-accent); }
+		.chip.cat-none::before { background: var(--sl-color-gray-4); }
+		.chip.cat-red::before { background: var(--q-ng); }
+		.chip.cat-yellow::before { background: var(--q-ok); }
+		.chip.cat-blue::before { background: var(--q-blue); }
 
 		/* --- 問題集セクション --- */
 		.deck h2 { font-size: 1.05rem; }
@@ -449,12 +420,9 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 		.cell:hover { border-color: var(--sl-color-text-accent); transform: translateY(-2px); box-shadow: 0 5px 14px -5px rgba(0, 0, 0, 0.4); }
 		.cell:active { transform: translateY(0) scale(0.94); }
 		.cell .c-num { font-size: 0.82rem; }
-		.cell .c-narrowed { background: rgba(0, 0, 0, 0.42); color: #fff; border-radius: 4px; }
-		.cell .c-comment { box-shadow: 0 0 0 1.5px var(--sl-color-bg); }
-		.cell.mark-x { background: linear-gradient(155deg, var(--q-ng), color-mix(in srgb, var(--q-ng) 80%, #000)); color: #fff; border-color: color-mix(in srgb, var(--q-ng) 72%, #000); }
-		.cell.mark-o { background: linear-gradient(155deg, var(--q-ok), color-mix(in srgb, var(--q-ok) 82%, #000)); color: #1a1200; border-color: color-mix(in srgb, var(--q-ok) 75%, #000); }
-		.cell.mark-o .c-comment { background: #1a1200; }
-		.cell.mark-oo { background: linear-gradient(155deg, var(--q-oo), color-mix(in srgb, var(--q-oo) 80%, #000)); color: #fff; border-color: color-mix(in srgb, var(--q-oo) 72%, #000); }
+		.cell.cat-red { background: linear-gradient(155deg, var(--q-ng), color-mix(in srgb, var(--q-ng) 80%, #000)); color: #fff; border-color: color-mix(in srgb, var(--q-ng) 72%, #000); }
+		.cell.cat-yellow { background: linear-gradient(155deg, var(--q-ok), color-mix(in srgb, var(--q-ok) 82%, #000)); color: #1a1200; border-color: color-mix(in srgb, var(--q-ok) 75%, #000); }
+		.cell.cat-blue { background: linear-gradient(155deg, var(--q-blue), color-mix(in srgb, var(--q-blue) 82%, #000)); color: #fff; border-color: color-mix(in srgb, var(--q-blue) 70%, #000); }
 
 		.deck-actions button { border-radius: 999px; transition: border-color 0.15s, color 0.15s; }
 		.deck-actions button:hover { color: var(--q-ng); border-color: color-mix(in srgb, var(--q-ng) 55%, transparent); }
@@ -580,7 +548,6 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 		const PRESET_TAGS = ['知識不足', '勘違い', '読み違い', '時間不足', 'ケアレスミス'];
 
 		const root = document.getElementById('tracker');
-		const showMasteredEl = /** @type {HTMLInputElement} */ (document.getElementById('show-mastered'));
 		/** 番号→セル要素の対応表。前後移動やノートからのジャンプに使う。@type {{[deck:string]: {[n:number]: HTMLButtonElement}}} */
 		let cellMap = {};
 
@@ -600,35 +567,21 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 			return rootEl;
 		}
 
-		function applyCell(btn, rec, showMastered) {
+		// 問題番号セルは「色」だけで状態を表す。
+		//   × わからなかった → 赤 / ○ あっていたが理由は曖昧 → 黄 / ◎ 理解できた等その他 → 青
+		//   未着手は色なし。絞り込み・メモ・タグなどはセルには表示しない（パネル内にまとめる）。
+		function applyCell(btn, rec) {
 			const mark = rec?.mark;
-			btn.classList.toggle('mark-x', mark === 'x');
-			btn.classList.toggle('mark-o', mark === 'o');
-			btn.classList.toggle('mark-oo', mark === 'oo');
-			btn.classList.toggle('dimmed', mark === 'oo' && showMastered);
-			// ◎（理解できた）は隠す（トグルONなら薄く表示）
-			btn.style.display = mark === 'oo' && !showMastered ? 'none' : '';
-
-			const markEl = btn.querySelector('.c-mark');
-			markEl.textContent = mark ? MARK_SYMBOL[mark] : '';
-			const narrowedEl = btn.querySelector('.c-narrowed');
-			if (rec?.narrowed) {
-				narrowedEl.hidden = false;
-				narrowedEl.textContent = `${rec.narrowed}択`;
-			} else {
-				narrowedEl.hidden = true;
-			}
-			const tagCount = rec?.tags?.length || 0;
-			btn.querySelector('.c-comment').hidden = !rec?.comment && tagCount === 0;
-
-			const markLabel = mark === 'oo' ? '理解できた' : mark === 'o' ? 'できた' : mark === 'x' ? '間違えた' : '未着手';
-			const extra = [
-				rec?.narrowed ? `${rec.narrowed}択まで絞れた` : '',
-				rec?.comment ? 'メモあり' : '',
-				tagCount ? `タグ${tagCount}件` : '',
-			].filter(Boolean).join('、');
-			btn.setAttribute('aria-label', `${btn.dataset.n}番: ${markLabel}${extra ? '、' + extra : ''}`);
-			btn.title = `${markLabel}${extra ? ' / ' + extra : ''}`;
+			btn.classList.toggle('cat-red', mark === 'x');
+			btn.classList.toggle('cat-yellow', mark === 'o');
+			btn.classList.toggle('cat-blue', mark === 'oo');
+			const label =
+				mark === 'x' ? 'わからなかった' :
+				mark === 'o' ? 'あっていたが理由は曖昧' :
+				mark === 'oo' ? '理解できた（その他）' :
+				'未着手';
+			btn.setAttribute('aria-label', `${btn.dataset.n}番: ${label}`);
+			btn.title = label;
 		}
 
 		function countDeck(deck) {
@@ -752,7 +705,7 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 			const rec = { ...(getRec(editing.deck.id, editing.n) || {}) };
 			mutate(rec);
 			setRec(editing.deck.id, editing.n, rec);
-			applyCell(editing.btn, getRec(editing.deck.id, editing.n), showMasteredEl.checked);
+			applyCell(editing.btn, getRec(editing.deck.id, editing.n));
 			updateSummary(editing.deck);
 			updateDashboard();
 			renderNotes();
@@ -817,7 +770,7 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 		document.getElementById('d-delete').addEventListener('click', () => {
 			if (!editing) return;
 			setRec(editing.deck.id, editing.n, null);
-			applyCell(editing.btn, undefined, showMasteredEl.checked);
+			applyCell(editing.btn, undefined);
 			updateSummary(editing.deck);
 			updateDashboard();
 			renderNotes();
@@ -940,7 +893,6 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 		});
 
 		function render() {
-			const showMastered = showMasteredEl.checked;
 			root.innerHTML = '';
 			cellMap = {};
 			for (const deck of DECKS) {
@@ -966,12 +918,8 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 					btn.className = 'cell';
 					btn.type = 'button';
 					btn.dataset.n = String(n);
-					btn.innerHTML =
-						`<span class="c-num">${n}</span>` +
-						`<span class="c-mark" aria-hidden="true"></span>` +
-						`<span class="c-narrowed" hidden></span>` +
-						`<span class="c-comment" hidden aria-hidden="true"></span>`;
-					applyCell(btn, ds[n], showMastered);
+					btn.innerHTML = `<span class="c-num">${n}</span>`;
+					applyCell(btn, ds[n]);
 					btn.addEventListener('click', () => openDetail(deck, n, btn));
 					cellMap[deck.id][n] = btn;
 					grid.appendChild(btn);
@@ -1000,7 +948,6 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 			renderNotes();
 		}
 
-		showMasteredEl.addEventListener('change', render);
 		render();
 	</script>
 </StarlightPage>
