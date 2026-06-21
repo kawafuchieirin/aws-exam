@@ -6,6 +6,8 @@
 //   ○ … 正解できた（ただし要確認）
 //   ◎ … 理解できた → 一覧から隠れ、解く対象から外れる
 // さらに各問題ごとに「振り返りメモ」と「選択肢を何択まで絞れたか」を残せる。
+// 冒頭には4週間の学習スケジュールを置き、開始日から「今日のタスク」を自動表示し
+// 各日の完了をチェックできる（記録は別キー ans-quiz-schedule-v1 に保存）。
 // 静的サイトのためサーバ不要・端末ごとに記録が残る。
 import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 ---
@@ -22,6 +24,24 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 		手元の問題集の「番号」をタップすると編集パネルが開きます。問題文は扱いません。
 		記録は<strong>このブラウザ（端末）</strong>に保存され、次回も残ります。
 	</p>
+
+	<section class="schedule" id="schedule">
+		<div class="sched-head">
+			<h2>4週間スケジュール</h2>
+			<div class="sched-controls">
+				<label class="sched-start">開始日（1週目の月曜）
+					<input type="date" id="sched-start" />
+				</label>
+				<span class="sched-progress"><b id="sched-done">0</b> / 28 日 完了</span>
+			</div>
+		</div>
+		<p class="sched-goal">
+			目標は模擬試験65問で <strong>52問以上（80%）を3回連続</strong>。
+			大事なのは「250問を何周したか」ではなく <strong>「△と×をどれだけ潰したか」</strong>です。
+		</p>
+		<div class="sched-today" id="sched-today" hidden></div>
+		<div class="sched-weeks" id="sched-weeks"></div>
+	</section>
 
 	<section class="dashboard" id="dashboard" aria-live="polite">
 		<h2>学習の成果</h2>
@@ -483,6 +503,103 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 		.d-done { border-radius: 8px; font-weight: 600; padding: 0.45rem 1.2rem; transition: transform 0.1s, filter 0.15s; }
 		.d-done:hover { filter: brightness(1.08); }
 		.d-done:active { transform: scale(0.97); }
+
+		/* --- 4週間スケジュール --- */
+		.schedule {
+			border: 1px solid var(--q-line); border-radius: var(--q-r);
+			padding: 1.35rem 1.5rem 1.5rem; margin: 1rem 0 1.5rem;
+			box-shadow: var(--q-shadow);
+			background:
+				radial-gradient(120% 120% at 0% 0%, color-mix(in srgb, var(--sl-color-text-accent) 9%, transparent), transparent 52%),
+				var(--sl-color-gray-7);
+		}
+		.sched-head {
+			display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+			gap: 0.6rem 1rem; margin-bottom: 0.5rem;
+		}
+		.sched-head h2 {
+			margin: 0; border: none;
+			font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em;
+			color: var(--sl-color-gray-2);
+			display: flex; align-items: center; gap: 0.55rem;
+		}
+		.sched-head h2::before {
+			content: ''; width: 0.55rem; height: 0.55rem; border-radius: 50%;
+			background: var(--sl-color-text-accent);
+			box-shadow: 0 0 0 4px color-mix(in srgb, var(--sl-color-text-accent) 22%, transparent);
+		}
+		.sched-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; }
+		.sched-start { font-size: 0.78rem; color: var(--sl-color-gray-3); display: inline-flex; align-items: center; gap: 0.4rem; }
+		.sched-start input {
+			font: inherit; font-size: 0.85rem; padding: 0.25rem 0.5rem; border-radius: 8px;
+			border: 1px solid var(--q-line); background: var(--q-surface); color: inherit;
+		}
+		.sched-progress {
+			font-size: 0.8rem; padding: 0.2rem 0.65rem; border-radius: 999px;
+			background: var(--q-surface); border: 1px solid var(--q-line);
+		}
+		.sched-progress b { font-variant-numeric: tabular-nums; color: var(--q-oo); }
+		.sched-goal {
+			font-size: 0.9rem; line-height: 1.6; color: var(--sl-color-gray-2); margin: 0 0 0.85rem;
+			padding-left: 0.85rem; border-left: 3px solid color-mix(in srgb, var(--q-oo) 55%, transparent);
+		}
+		.sched-today {
+			display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.3rem 0.6rem;
+			padding: 0.7rem 0.9rem; margin: 0 0 1.1rem; border-radius: var(--q-r-sm);
+			background: color-mix(in srgb, var(--sl-color-text-accent) 12%, transparent);
+			border: 1px solid color-mix(in srgb, var(--sl-color-text-accent) 32%, transparent);
+		}
+		.sched-today .st-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--sl-color-text-accent); }
+		.sched-today .st-task { font-weight: 600; }
+		.sched-today .st-note { font-size: 0.85rem; color: var(--sl-color-gray-2); }
+
+		.sched-weeks { display: grid; gap: 1.1rem; }
+		.sched-week-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem; margin-bottom: 0.2rem; }
+		.sched-week-no {
+			font-weight: 700; font-size: 0.9rem; padding: 0.1rem 0.55rem; border-radius: 7px;
+			background: var(--q-surface); border: 1px solid var(--q-line); font-variant-numeric: tabular-nums;
+		}
+		.sched-week-theme { font-size: 0.9rem; color: var(--sl-color-gray-2); }
+		.sched-week-goal { font-size: 0.8rem; color: var(--sl-color-gray-3); margin: 0.15rem 0 0.5rem; line-height: 1.5; }
+		.sched-days { display: grid; grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr)); gap: 0.5rem; }
+		.sched-day {
+			position: relative; text-align: left; cursor: pointer; font: inherit; color: inherit;
+			display: flex; flex-direction: column; gap: 0.2rem;
+			padding: 0.55rem 0.65rem; border-radius: var(--q-r-sm);
+			border: 1px solid var(--q-line); background: var(--q-surface);
+			transition: border-color 0.15s, transform 0.12s, box-shadow 0.12s, background 0.15s;
+		}
+		.sched-day:hover { border-color: var(--sl-color-text-accent); transform: translateY(-1px); box-shadow: var(--q-shadow); }
+		.sched-day:active { transform: translateY(0) scale(0.98); }
+		.sched-dow {
+			font-size: 0.72rem; font-weight: 700; color: var(--sl-color-gray-3);
+			display: flex; align-items: center; gap: 0.3rem;
+		}
+		.sched-day.sat .sched-dow { color: var(--q-blue); }
+		.sched-day.sun .sched-dow { color: var(--q-ng); }
+		.sched-task { font-size: 0.88rem; font-weight: 600; line-height: 1.35; }
+		.sched-note { font-size: 0.74rem; color: var(--sl-color-gray-3); }
+		.sched-check {
+			position: absolute; top: 0.5rem; right: 0.55rem; width: 1.1rem; height: 1.1rem;
+			border-radius: 50%; border: 1.5px solid var(--q-line);
+			display: flex; align-items: center; justify-content: center;
+			font-size: 0.7rem; line-height: 1; color: transparent;
+		}
+		.sched-day.done {
+			background: var(--q-oo-soft); border-color: color-mix(in srgb, var(--q-oo) 40%, transparent);
+		}
+		.sched-day.done .sched-check { background: var(--q-oo); border-color: var(--q-oo); color: #fff; }
+		.sched-day.done .sched-task { color: var(--sl-color-gray-2); }
+		.sched-day.is-today {
+			border-color: var(--sl-color-text-accent);
+			box-shadow: 0 0 0 2px color-mix(in srgb, var(--sl-color-text-accent) 35%, transparent);
+		}
+		.sched-day.is-mock .sched-task::after {
+			content: '模試'; font-size: 0.62rem; font-weight: 700; margin-left: 0.35rem;
+			padding: 0.02rem 0.32rem; border-radius: 5px; vertical-align: middle;
+			background: color-mix(in srgb, var(--q-blue) 20%, transparent);
+			border: 1px solid color-mix(in srgb, var(--q-blue) 45%, transparent); color: var(--q-blue);
+		}
 
 		/* --- モーション軽減 --- */
 		@media (prefers-reduced-motion: reduce) {
@@ -948,6 +1065,188 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 			renderNotes();
 		}
 
+		// ---- 4週間スケジュール ----
+		// 学習計画を曜日単位で表示し、各日の完了をチェックできる。開始日（1週目の月曜）を
+		// 設定すると、今日が何日目かを計算して「今日のタスク」を強調表示する。
+		// 記録は localStorage（×○◎の記録とは別キー）に保存する。
+		const SCHED_KEY = 'ans-quiz-schedule-v1';
+		const SCHEDULE = [
+			{
+				theme: '全250問の約半分を解く',
+				goal: '各問題を ○（理由まで説明できて正解）／△（正解したが迷った）／× で分類。狙いは現状把握なので、最初から暗記しなくてよい。',
+				days: [
+					{ task: '問題 1〜25', note: '25問' },
+					{ task: '問題 26〜50', note: '25問' },
+					{ task: '問題 51〜75', note: '25問' },
+					{ task: '問題 76〜100', note: '25問' },
+					{ task: '問題 101〜125', note: '25問' },
+					{ task: '問題 126〜180', note: '55問' },
+					{ task: '問題 181〜220 + 復習', note: '40問・復習多め' },
+				],
+			},
+			{
+				theme: '250問を一周完了し、1回目の模擬試験',
+				goal: '土曜に1回目の模擬試験。80%未満でもよく、目的は弱点の特定。52/65以上=目標到達、45〜51=あと少し、44以下=要重点復習。',
+				days: [
+					{ task: '問題 221〜250 + 1週目の×復習', note: '30問 + 復習' },
+					{ task: '1週目の △・× を解き直し', note: '25〜35問' },
+					{ task: '2週目までの × を解き直し', note: '25〜35問' },
+					{ task: '苦手分野だけ再演習', note: '25〜35問' },
+					{ task: '軽めの復習・暗記整理', note: '20〜30問' },
+					{ task: '模擬試験65問 → 復習', note: '1回分', mock: true },
+					{ task: '模擬試験の間違い復習 + 苦手演習', note: '復習中心' },
+				],
+			},
+			{
+				theme: '間違えた問題と迷った問題を潰す（最重要）',
+				goal: '点数が最も伸びる週。「答えを覚えている」ではなく「なぜ正解で、他がなぜ不正解か説明できる」状態を目指す。土日の模試はどちらか1回で80%以上が目標。',
+				days: [
+					{ task: '× 問題だけ解き直し', note: '30問前後' },
+					{ task: '△ 問題だけ解き直し', note: '30問前後' },
+					{ task: '× 問題 2周目', note: '30問前後' },
+					{ task: '模試で間違えた問題の類似復習', note: '30問前後' },
+					{ task: '苦手分野まとめ', note: '復習中心' },
+					{ task: '模擬試験65問 → 復習', note: '1回分', mock: true },
+					{ task: '模擬試験65問 → 復習', note: '1回分', mock: true },
+				],
+			},
+			{
+				theme: '80%以上を安定させる（本番想定）',
+				goal: '模試で3回連続52/65以上が目標。理想は55/65（85%）以上で、相性の悪い回でも80%を下回りにくくなる。',
+				days: [
+					{ task: '模擬試験65問 → 復習', note: '1回分', mock: true },
+					{ task: '月曜の間違い復習 + 苦手問題', note: '復習中心' },
+					{ task: '模擬試験65問 → 復習', note: '1回分', mock: true },
+					{ task: '水曜の間違い復習 + 暗記整理', note: '復習中心' },
+					{ task: '軽めの総復習', note: '重要問題のみ' },
+					{ task: '模擬試験65問 → 復習', note: '1回分', mock: true },
+					{ task: '最終確認（× と △ だけ）', note: '復習中心' },
+				],
+			},
+		];
+		const DOW = ['月', '火', '水', '木', '金', '土', '日'];
+
+		let schedState = (() => {
+			try {
+				const s = JSON.parse(localStorage.getItem(SCHED_KEY) || 'null');
+				if (s && typeof s === 'object') return { start: s.start || '', done: s.done || {} };
+			} catch {}
+			return { start: '', done: {} };
+		})();
+		const saveSched = () => localStorage.setItem(SCHED_KEY, JSON.stringify(schedState));
+
+		const ymd = (date) => {
+			const m = String(date.getMonth() + 1).padStart(2, '0');
+			const d = String(date.getDate()).padStart(2, '0');
+			return `${date.getFullYear()}-${m}-${d}`;
+		};
+		const parseYmd = (s) => {
+			if (!s) return null;
+			const [y, m, d] = s.split('-').map(Number);
+			return new Date(y, m - 1, d);
+		};
+		/** 直近（または当日）の月曜の日付。開始日入力の初期値に使う。 */
+		function mostRecentMonday() {
+			const t = new Date();
+			t.setHours(0, 0, 0, 0);
+			t.setDate(t.getDate() - ((t.getDay() + 6) % 7)); // 月曜=0 として戻す
+			return ymd(t);
+		}
+		/** 開始日からの経過日数（0〜27）。範囲外なら -1。 */
+		function currentDayIndex() {
+			const start = parseYmd(schedState.start);
+			if (!start) return -1;
+			start.setHours(0, 0, 0, 0);
+			const t = new Date();
+			t.setHours(0, 0, 0, 0);
+			const diff = Math.floor((t - start) / 86400000);
+			return diff >= 0 && diff < 28 ? diff : -1;
+		}
+
+		const schedStartInput = /** @type {HTMLInputElement} */ (document.getElementById('sched-start'));
+		const schedWeeks = document.getElementById('sched-weeks');
+		const schedToday = document.getElementById('sched-today');
+		const schedDone = document.getElementById('sched-done');
+
+		function renderSchedule() {
+			schedStartInput.value = schedState.start;
+			if (!schedStartInput.placeholder) schedStartInput.placeholder = mostRecentMonday();
+			const todayIdx = currentDayIndex();
+
+			// 今日のタスク
+			if (todayIdx >= 0) {
+				const w = Math.floor(todayIdx / 7), d = todayIdx % 7;
+				const day = SCHEDULE[w].days[d];
+				schedToday.hidden = false;
+				schedToday.innerHTML =
+					`<span class="st-label">今日（${w + 1}週目 ${DOW[d]}）</span>` +
+					`<span class="st-task"></span><span class="st-note"></span>`;
+				schedToday.querySelector('.st-task').textContent = day.task;
+				schedToday.querySelector('.st-note').textContent = day.note;
+			} else {
+				schedToday.hidden = true;
+				schedToday.innerHTML = '';
+			}
+
+			// 週ごとの一覧
+			schedWeeks.innerHTML = SCHEDULE.map((week, w) => {
+				const days = week.days.map((day, d) => {
+					const idx = w * 7 + d;
+					const cls = [
+						'sched-day',
+						d === 5 ? 'sat' : d === 6 ? 'sun' : '',
+						schedState.done[idx] ? 'done' : '',
+						idx === todayIdx ? 'is-today' : '',
+						day.mock ? 'is-mock' : '',
+					].filter(Boolean).join(' ');
+					return `<button type="button" class="${cls}" data-idx="${idx}" aria-pressed="${!!schedState.done[idx]}">
+						<span class="sched-dow">${DOW[d]}</span>
+						<span class="sched-task"></span>
+						<span class="sched-note"></span>
+						<span class="sched-check" aria-hidden="true">✓</span>
+					</button>`;
+				}).join('');
+				return `<div class="sched-week">
+					<div class="sched-week-head"><span class="sched-week-no">${w + 1}週目</span><span class="sched-week-theme">${week.theme}</span></div>
+					<p class="sched-week-goal"></p>
+					<div class="sched-days">${days}</div>
+				</div>`;
+			}).join('');
+
+			// ユーザー向け文言は textContent で安全に挿入
+			schedWeeks.querySelectorAll('.sched-week').forEach((el, w) => {
+				el.querySelector('.sched-week-goal').textContent = SCHEDULE[w].goal;
+				el.querySelectorAll('.sched-day').forEach((btn) => {
+					const idx = Number(btn.dataset.idx);
+					const day = SCHEDULE[Math.floor(idx / 7)].days[idx % 7];
+					btn.querySelector('.sched-task').textContent = day.task;
+					btn.querySelector('.sched-note').textContent = day.note;
+				});
+			});
+
+			const doneCount = Object.values(schedState.done).filter(Boolean).length;
+			schedDone.textContent = String(doneCount);
+			scopeTree(schedWeeks);
+			scopeTree(schedToday);
+		}
+
+		schedWeeks.addEventListener('click', (e) => {
+			const btn = e.target.closest('.sched-day');
+			if (!btn) return;
+			const idx = btn.dataset.idx;
+			if (schedState.done[idx]) delete schedState.done[idx];
+			else schedState.done[idx] = true;
+			saveSched();
+			renderSchedule();
+		});
+
+		schedStartInput.addEventListener('change', () => {
+			schedState.start = schedStartInput.value;
+			saveSched();
+			renderSchedule();
+		});
+
 		render();
+		renderSchedule();
 	</script>
 </StarlightPage>
