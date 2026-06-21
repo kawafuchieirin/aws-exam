@@ -1,6 +1,6 @@
 ---
 // ANS-C01 問題集トラッカー
-// 外部の問題集（①250問 / 模擬220問）について、各問題の手応えを番号単位で記録する。
+// 外部の問題集（①250問）について、各問題の手応えを番号単位で記録する。
 // 問題文そのものは扱わず、状態だけをブラウザ(localStorage)に保存する。
 //   × … 間違えた／わからない（要復習）
 //   ○ … 正解できた（ただし要確認）
@@ -612,7 +612,6 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 		// ---- 設定（問題集と問題数）。名称・問題数はここを編集すれば変更可 ----
 		const DECKS = [
 			{ id: 'set1', label: '問題集①', count: 250 },
-			{ id: 'mock', label: '模擬試験', count: 220 },
 		];
 		const STORAGE_KEY = 'ans-quiz-tracker-v2';
 		const LEGACY_KEY = 'ans-quiz-tracker-v1';
