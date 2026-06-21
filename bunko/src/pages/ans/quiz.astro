@@ -46,11 +46,11 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 	<section class="dashboard" id="dashboard" aria-live="polite">
 		<h2>学習の成果</h2>
 		<div class="dash-top">
-			<div class="ring" id="dash-ring" style="--pct:0" role="img" aria-label="理解できた割合">
-				<div class="ring-center"><b id="dash-pct">0%</b><span>理解できた</span></div>
+			<div class="ring" id="dash-ring" style="--pct:0" role="img" aria-label="復習不要になった割合">
+				<div class="ring-center"><b id="dash-pct">0%</b><span>復習不要</span><small id="dash-fraction">0 / 0問</small></div>
 			</div>
 			<div class="stats">
-				<div class="stat s-mastered"><b id="dash-mastered">0</b><span>◎ 理解できた</span></div>
+				<div class="stat s-mastered"><b id="dash-mastered">0</b><span>◎ 復習不要（理解できた）</span></div>
 				<div class="stat s-ok"><b id="dash-ok">0</b><span>○ できた</span></div>
 				<div class="stat s-ng"><b id="dash-ng">0</b><span>× 要復習</span></div>
 				<div class="stat s-remain"><b id="dash-remain">0</b><span>未着手</span></div>
@@ -169,6 +169,7 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 		.ring-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 		.ring-center b { font-size: 1.6rem; font-variant-numeric: tabular-nums; line-height: 1; }
 		.ring-center span { font-size: 0.75rem; color: var(--sl-color-gray-3); }
+		.ring-center small { font-size: 0.78rem; font-variant-numeric: tabular-nums; color: var(--sl-color-gray-2); font-weight: 600; margin-top: 0.1rem; }
 		.stats { display: grid; grid-template-columns: repeat(2, minmax(5.5rem, 1fr)); gap: 0.75rem 1.5rem; }
 		.stat b { display: block; font-size: 1.6rem; font-variant-numeric: tabular-nums; line-height: 1.1; }
 		.stat span { font-size: 0.8rem; color: var(--sl-color-gray-3); }
@@ -740,6 +741,7 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 			}
 			const pct = total ? Math.round((mastered / total) * 100) : 0;
 			document.getElementById('dash-pct').textContent = `${pct}%`;
+			document.getElementById('dash-fraction').textContent = `${mastered} / ${total}問`;
 			document.getElementById('dash-ring').style.setProperty('--pct', String(pct));
 			document.getElementById('dash-mastered').textContent = String(mastered);
 			document.getElementById('dash-ok').textContent = String(ok);
