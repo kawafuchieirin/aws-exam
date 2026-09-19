@@ -2,16 +2,12 @@
 資格試験の学習のためのリポジトリ
 
 ## 取得済み
-
-<img width="1765" height="649" alt="aws-badges-20260823" src="https://github.com/user-attachments/assets/c8857076-119d-4c0a-a21b-bc7f6ae45f54" />
-
+<img width="1500" height="500" alt="image-initial-1789822287023" src="https://github.com/user-attachments/assets/1a29bb24-b13b-4c50-8f33-566124140f53" />
 
 
 
 ## 未取得
-- ANS
-
-- AIP
+AIB
 
 
 ## ディレクトリ構成
