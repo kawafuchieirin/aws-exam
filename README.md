@@ -18,18 +18,7 @@ AIB
 └── badge-generator/
     ├── index.html
     ├── badge-data.js
-    └── images/
-        ├── AIF.png
-        ├── ANS.png
-        ├── CLF.png
-        ├── DEA.png
-        ├── DOP.png
-        ├── DVA.png
-        ├── MLA.png
-        ├── SAA.png
-        ├── SAP.png
-        ├── SCS.png
-        └── SOA.png
+    └── images/  # 各資格のバッジ画像（省略）
 ```
 
 ## badge-generatorの使い方
